@@ -153,6 +153,9 @@
                     <i data-lucide="sparkles" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Unlock Your Learning Journey</h2>
                     <p class="text-gray-500 mb-6">Sign in to access your courses, track progress, and earn certificates.</p>
+                    
+                    <!-- Configuration removed for clean UI. Keys are now hardcoded in JS. -->
+                    
                     <button onclick="signInWithGoogle()" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-knowsta-500 focus:ring-offset-2 transform hover:-translate-y-0.5 active:translate-y-0.5">
                         <i data-lucide="log-in" class="w-5 h-5 mr-3 text-knowsta-500"></i>
                         Sign In
@@ -185,10 +188,9 @@
     <!-- JavaScript for Supabase Setup, Auth, Mock Data, Rendering, and Interactivity --><script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // NOTE: Since this environment does not provide Supabase global variables, 
-        // we use placeholders. In a real application, replace these:
-        const SUPABASE_URL = 'https://mock.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'mock-anon-key-for-canvas';
+        // UPDATED: Use the user's live keys as the default configuration constants
+        const FALLBACK_SUPABASE_URL = 'https://txexfyeiarmkfxbjsifc.supabase.co'; 
+        const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4ZXhmeWVpYXJta2Z4YmpzaWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAxNzYsImV4cCI6MjA3NTUxNjE3Nn0.qAMIETftxjy2GFl_jqtqDucHgOTXOxRrlKQcLs8vwno';
         
         let supabase = null;
         let currentUser = null; // Stores the current Supabase User object
@@ -220,6 +222,21 @@
             ]
         };
 
+        /**
+         * Utility function to get the current Supabase client, using global constants.
+         * Creates a new client if one is not initialized or if the keys have changed.
+         * @param {string} url - The URL to use for client creation.
+         * @param {string} key - The Anon Key to use for client creation.
+         */
+        function getSupabaseClient(url, key) {
+            // Check if the current global client matches the provided credentials
+            if (supabase && supabase.supabaseUrl === url && supabase.supabaseKey === key) {
+                return supabase;
+            }
+            // If not, create a new client
+            return createClient(url, key);
+        }
+
         // --- Core Authentication Functions (Supabase) ---
 
         /**
@@ -227,10 +244,10 @@
          */
         async function setupSupabase() {
             try {
-                // 1. Initialize Supabase Client
-                supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                // Initialize with FALLBACK keys (user's actual keys)
+                supabase = getSupabaseClient(FALLBACK_SUPABASE_URL, FALLBACK_SUPABASE_ANON_KEY);
 
-                // 2. Listen for authentication state changes
+                // 2. Listen for authentication state changes (This listener is tied to the first client instance)
                 supabase.auth.onAuthStateChange((event, session) => {
                     currentUser = session ? session.user : null;
                     isLoading = false;
@@ -243,7 +260,7 @@
                 });
                 
                 // 3. Check for initial session immediately
-                const { data: { session } = {} } = await supabase.auth.getSession(); // Destructure with default empty object
+                const { data: { session } = {} } = await supabase.auth.getSession(); 
                 currentUser = session ? session.user : null;
                 
                 // If the listener hasn't fired yet and we know the state:
@@ -267,11 +284,17 @@
          */
         window.signInWithGoogle = async function() {
             try {
-                // Show spinner in modal while authenticating
-                showModal("Signing In...", "Please wait while we securely sign you in...", "loader-2", true);
+                // Now, we rely directly on the hardcoded constants
+                const SUPABASE_URL = FALLBACK_SUPABASE_URL;
+                const SUPABASE_ANON_KEY = FALLBACK_SUPABASE_ANON_KEY;
+                
+                // Create a fresh client instance using the constant keys
+                const authClient = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                showModal("Signing In...", "Redirecting to Google for sign-in...", "loader-2", true);
 
                 // Supabase signInWithOAuth for Google
-                const { error } = await supabase.auth.signInWithOAuth({
+                const { error } = await authClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
                         // Redirect to the current page after successful sign-in
@@ -291,8 +314,9 @@
                 // The onAuthStateChange listener will handle the UI update after sign-in.
             } catch (error) {
                 console.error("Google Sign-In failed:", error.message);
-                if (!document.getElementById('mock-modal').classList.contains('flex')) { // Only show if modal isn't already open
-                     showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
+                // Only show a general error if the modal isn't already active from the sign-in flow
+                if (!document.getElementById('modal-spinner').classList.contains('hidden')) { 
+                    showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
                 }
             } finally {
                 hideSpinner(); // Ensure spinner is hidden regardless of outcome
@@ -303,9 +327,12 @@
          * Signs out the current user via Supabase.
          */
         window.signOutUser = async function() {
-            try {
+             try {
+                // Rely directly on the hardcoded constants
+                const authClient = getSupabaseClient(FALLBACK_SUPABASE_URL, FALLBACK_SUPABASE_ANON_KEY);
+                
                 showModal("Signing Out...", "Please wait while we log you out...", "loader-2", true); // Show spinner
-                const { error } = await supabase.auth.signOut();
+                const { error } = await authClient.auth.signOut();
                 if (error) {
                     showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
                     throw error;
