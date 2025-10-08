@@ -56,6 +56,12 @@
         i[data-lucide] {
             stroke-width: 2.2; /* Make icons slightly bolder */
         }
+
+        .nav-active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 4px;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -102,16 +108,16 @@
         
         <!-- Header: Fixed Top Navigation Bar (Apple/Coursera style) --><header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <!-- Logo --><a href="#" class="flex items-center space-x-2">
+                <!-- Logo --><a href="#dashboard" onclick="navigateTo('dashboard')" class="flex items-center space-x-2">
                     <span class="text-3xl font-extrabold text-knowsta-500 logo-font">Knowsta</span>
                     <span class="hidden sm:inline text-xl text-gray-500">Learn</span>
                 </a>
 
-                <!-- Navigation/Search (Hidden on smaller screens) --><nav class="hidden md:flex flex-1 mx-8 items-center justify-center space-x-6 text-sm font-medium text-gray-600">
-                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Catalog</a>
-                    <a href="#" class="hover:text-knowsta-500 transition duration-150">My Learning</a>
-                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Certificates</a>
-                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Support</a>
+                <!-- Navigation/Search (Hidden on smaller screens) --><nav class="hidden md:flex flex-1 mx-8 items-center justify-center space-x-8 text-sm font-medium text-gray-600">
+                    <a id="nav-dashboard" href="#dashboard" onclick="navigateTo('dashboard')" class="nav-link hover:text-knowsta-500 transition duration-150">My Learning</a>
+                    <a id="nav-catalog" href="#catalog" onclick="navigateTo('catalog')" class="nav-link hover:text-knowsta-500 transition duration-150">Catalog</a>
+                    <a id="nav-settings" href="#settings" onclick="navigateTo('settings')" class="nav-link hover:text-knowsta-500 transition duration-150">Account Settings</a>
+                    <a id="nav-about" href="#about" onclick="navigateTo('about')" class="nav-link hover:text-knowsta-500 transition duration-150">About Knowsta</a>
                 </nav>
 
                 <!-- Right side: Auth and Profile (Dynamic) --><div id="auth-section" class="flex items-center space-x-4">
@@ -120,10 +126,11 @@
         </header>
 
         <!-- Main Content Area --><main class="pt-24 p-4 md:p-8 max-w-7xl mx-auto" id="main-content">
-            <!-- Content will be hidden until authenticated --><div id="dashboard-content" class="hidden opacity-0 transition-opacity duration-500">
+            
+            <!-- VIEW: Dashboard / My Learning (Default Authenticated View) --><div id="dashboard-view" class="app-view opacity-0 transition-opacity duration-500">
                 <!-- Welcome & Key Stats Section (High-level data, clean cards) --><section class="mb-8">
-                    <h1 id="welcome-header" class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
-                    <p class="text-gray-500 mb-6">Continue your journey and track your progress.</p>
+                    <!-- Greeting is now dynamic, updated in JS --><h1 id="welcome-header" class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Welcome!</h1>
+                    <!-- Subtitle is now dynamic, updated in JS --><p id="welcome-subtitle" class="text-gray-500 mb-6">Continue your journey and track your progress.</p>
                     
                     <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Stat Cards will be rendered here by JS --></div>
@@ -147,14 +154,94 @@
                         <!-- Recommended course cards will be rendered here by JS --></div>
                 </section>
             </div>
+            
+            <!-- VIEW: Account Settings --><div id="settings-view" class="app-view hidden opacity-0 transition-opacity duration-500">
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">Account Settings</h1>
+                    <p class="text-gray-500 mb-8">Manage your profile, preferences, and security settings.</p>
+
+                    <!-- Profile Card -->
+                    <div class="mb-8 border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i data-lucide="user" class="w-5 h-5 mr-2 text-knowsta-500"></i> Profile Information
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Name (Read-only from Supabase Auth) -->
+                            <div>
+                                <label for="profile-name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input id="profile-name" type="text" disabled class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-500 cursor-not-allowed text-sm">
+                            </div>
+                            
+                            <!-- Bio (Editable) -->
+                            <div>
+                                <label for="profile-bio" class="block text-sm font-medium text-gray-700">Bio (Max 150 characters)</label>
+                                <textarea id="profile-bio" rows="3" maxlength="150" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-knowsta-500 focus:ring-knowsta-500 px-4 py-2 text-sm" placeholder="Tell us a little about your learning goals..."></textarea>
+                            </div>
+
+                            <!-- Location (Editable) -->
+                            <div>
+                                <label for="profile-location" class="block text-sm font-medium text-gray-700">Location</label>
+                                <input id="profile-location" type="text" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-knowsta-500 focus:ring-knowsta-500 px-4 py-2 text-sm" placeholder="e.g., London, UK">
+                            </div>
+                            
+                            <button onclick="updateUserProfile()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-knowsta-500 transform hover:-translate-y-0.5 active:translate-y-0.5">
+                                <i data-lucide="save" class="w-4 h-4 mr-2"></i> Save Profile
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Persistence Note -->
+                    <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-lg">
+                        <p class="text-sm font-medium">Data Persistence Note:</p>
+                        <p class="text-xs">To make these changes permanent across sessions, you must set up and reference a **Supabase Table** (e.g., `user_profiles`) in the `updateUserProfile` function in the JavaScript code below.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Catalog (Placeholder) --><div id="catalog-view" class="app-view hidden pt-12 text-center opacity-0 transition-opacity duration-500">
+                <div class="max-w-xl mx-auto p-10 bg-white rounded-xl shadow-lg border border-gray-100">
+                    <i data-lucide="search-check" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">The Full Catalog is Coming Soon!</h2>
+                    <p class="text-gray-500 mb-6">Explore hundreds of courses in tech, business, and art.</p>
+                    <button onclick="navigateTo('dashboard')" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg shadow-sm text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        Back to My Learning
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: About Knowsta Learn --><div id="about-view" class="app-view hidden opacity-0 transition-opacity duration-500">
+                <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-4">About Knowsta Learn</h1>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Our mission is to democratize high-quality, professional education. We partner with top universities and industry leaders to bring accessible, job-relevant skills to learners worldwide.
+                    </p>
+
+                    <div class="grid md:grid-cols-3 gap-6 text-left">
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="target" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Mission-Driven</h3>
+                            <p class="text-sm text-gray-600">Empowering individuals through transformative learning experiences that drive career growth.</p>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="infinity" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Flexible Learning</h3>
+                            <p class="text-sm text-gray-600">Learn at your own pace, on your own schedule. Access courses anytime, anywhere, on any device.</p>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="award" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Certified Excellence</h3>
+                            <p class="text-sm text-gray-600">Earn recognized certifications and Specializations that validate your new skills to employers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Logged Out Message --><div id="logged-out-view" class="hidden pt-12 text-center">
                 <div class="max-w-xl mx-auto p-10 bg-white rounded-xl shadow-lg border border-gray-100">
                     <i data-lucide="sparkles" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Unlock Your Learning Journey</h2>
                     <p class="text-gray-500 mb-6">Sign in to access your courses, track progress, and earn certificates.</p>
-                    
-                    <!-- Configuration removed for clean UI. Keys are now hardcoded in JS. -->
                     
                     <button onclick="signInWithGoogle()" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-knowsta-500 focus:ring-offset-2 transform hover:-translate-y-0.5 active:translate-y-0.5">
                         <i data-lucide="log-in" class="w-5 h-5 mr-3 text-knowsta-500"></i>
@@ -188,13 +275,22 @@
     <!-- JavaScript for Supabase Setup, Auth, Mock Data, Rendering, and Interactivity --><script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // UPDATED: Use the user's live keys as the default configuration constants
-        const FALLBACK_SUPABASE_URL = 'https://txexfyeiarmkfxbjsifc.supabase.co'; 
-        const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4ZXhmeWVpYXJta2Z4YmpzaWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAxNzYsImV4cCI6MjA3NTUxNjE3Nn0.qAMIETftxjy2GFl_jqtqDucHgOTXOxRrlKQcLs8vwno';
+        // Supabase Keys
+        const SUPABASE_URL = 'https://txexfyeiarmkfxbjsifc.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4ZXhmeWVpYXJta2Z4YmpzaWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAxNzYsImV4cCI6MjA3NTUxNjE3Nn0.qAMIETftxjy2GFl_jqtqDucHgOTXOxRrlKQcLs8vwno';
         
         let supabase = null;
         let currentUser = null; // Stores the current Supabase User object
         let isLoading = true;
+        let currentView = 'dashboard'; // Default view
+        
+        // Mock profile data (Simulates Supabase table data)
+        let userProfileData = {
+            name: '',
+            bio: "I'm interested in advancing my career in data science and product management.",
+            location: "New York, NY",
+            coursesCompleted: 3
+        };
 
         // Colors for instructor avatars
         const instructorAvatarColors = [
@@ -202,7 +298,7 @@
             'bg-instructor-purple', 'bg-instructor-yellow', 'bg-instructor-teal'
         ];
 
-        // Mock User Data Structure
+        // Mock User Data Structure (Static course and stats list)
         const mockUserData = {
             stats: [
                 { title: "Courses Started", value: 7, icon: "graduation-cap", color: "text-blue-500" },
@@ -223,17 +319,12 @@
         };
 
         /**
-         * Utility function to get the current Supabase client, using global constants.
-         * Creates a new client if one is not initialized or if the keys have changed.
-         * @param {string} url - The URL to use for client creation.
-         * @param {string} key - The Anon Key to use for client creation.
+         * Utility function to get the current Supabase client.
          */
         function getSupabaseClient(url, key) {
-            // Check if the current global client matches the provided credentials
             if (supabase && supabase.supabaseUrl === url && supabase.supabaseKey === key) {
                 return supabase;
             }
-            // If not, create a new client
             return createClient(url, key);
         }
 
@@ -244,38 +335,47 @@
          */
         async function setupSupabase() {
             try {
-                // Initialize with FALLBACK keys (user's actual keys)
-                supabase = getSupabaseClient(FALLBACK_SUPABASE_URL, FALLBACK_SUPABASE_ANON_KEY);
+                supabase = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-                // 2. Listen for authentication state changes (This listener is tied to the first client instance)
+                // Initialize currentView from hash on load
+                currentView = window.location.hash.substring(1) || 'dashboard';
+
+                // 2. Listen for authentication state changes
                 supabase.auth.onAuthStateChange((event, session) => {
                     currentUser = session ? session.user : null;
                     isLoading = false;
-                    renderDashboard(); // Re-render the UI based on the new user state
+                    renderApp(); 
                     hideLoadingOverlay();
                     
                     if (event === 'SIGNED_IN') {
+                        // On sign-in, try to fetch the profile
+                        fetchUserProfile();
                         showModal("Welcome!", "You are now signed in to Knowsta Learn.", "check-circle");
+                    } else if (event === 'SIGNED_OUT') {
+                         userProfileData = { name: '', bio: '', location: '', coursesCompleted: 0 };
                     }
                 });
                 
                 // 3. Check for initial session immediately
                 const { data: { session } = {} } = await supabase.auth.getSession(); 
                 currentUser = session ? session.user : null;
+
+                if (currentUser) {
+                     await fetchUserProfile(); // Fetch profile if already logged in
+                }
                 
-                // If the listener hasn't fired yet and we know the state:
                 if (isLoading) {
                     isLoading = false;
-                    renderDashboard();
+                    renderApp();
                     hideLoadingOverlay();
                 }
 
             } catch (error) {
                 console.error("Supabase setup failed:", error);
                 isLoading = false;
-                renderDashboard();
+                renderApp();
                 hideLoadingOverlay();
-                showModal("Setup Error", "Failed to initialize Supabase. Check the URL and Key placeholders.", "x");
+                showModal("Setup Error", "Failed to initialize Supabase. Check the URL and Key configuration.", "x");
             }
         }
 
@@ -284,26 +384,15 @@
          */
         window.signInWithGoogle = async function() {
             try {
-                // Now, we rely directly on the hardcoded constants
-                const SUPABASE_URL = FALLBACK_SUPABASE_URL;
-                const SUPABASE_ANON_KEY = FALLBACK_SUPABASE_ANON_KEY;
-                
-                // Create a fresh client instance using the constant keys
                 const authClient = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 
                 showModal("Signing In...", "Redirecting to Google for sign-in...", "loader-2", true);
 
-                // Supabase signInWithOAuth for Google
                 const { error } = await authClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        // Redirect to the current page after successful sign-in
                         redirectTo: window.location.origin + window.location.pathname, 
-                        // Set the OAuth flow to 'pkce' for security
-                        queryParams: {
-                            access_type: 'offline', 
-                            prompt: 'consent',
-                        }
+                        queryParams: { access_type: 'offline', prompt: 'consent', }
                     },
                 });
 
@@ -311,15 +400,13 @@
                     showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
                     throw error;
                 }
-                // The onAuthStateChange listener will handle the UI update after sign-in.
             } catch (error) {
                 console.error("Google Sign-In failed:", error.message);
-                // Only show a general error if the modal isn't already active from the sign-in flow
                 if (!document.getElementById('modal-spinner').classList.contains('hidden')) { 
                     showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
                 }
             } finally {
-                hideSpinner(); // Ensure spinner is hidden regardless of outcome
+                hideSpinner(); 
             }
         }
 
@@ -328,16 +415,14 @@
          */
         window.signOutUser = async function() {
              try {
-                // Rely directly on the hardcoded constants
-                const authClient = getSupabaseClient(FALLBACK_SUPABASE_URL, FALLBACK_SUPABASE_ANON_KEY);
+                const authClient = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 
-                showModal("Signing Out...", "Please wait while we log you out...", "loader-2", true); // Show spinner
+                showModal("Signing Out...", "Please wait while we log you out...", "loader-2", true); 
                 const { error } = await authClient.auth.signOut();
                 if (error) {
                     showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
                     throw error;
                 }
-                // The onAuthStateChange listener handles the UI update
                 showModal("Signed Out", "You have been signed out. Come back soon!", "log-out");
             } catch (error) {
                 console.error("Sign-out failed:", error);
@@ -349,25 +434,114 @@
             }
         }
         
-        // --- Utility Functions ---
+        // --- Supabase Database Mock/Placeholder Functions ---
 
         /**
-         * Closes the mock modal.
+         * Mocks fetching the user profile data (bio, location) from a Supabase table.
          */
+        async function fetchUserProfile() {
+            // NOTE: In a live app, you would fetch data from the 'user_profiles' table here.
+            
+            // Example Supabase fetch logic (commented out):
+            /*
+            const { data, error } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .single();
+            if (data) {
+                userProfileData = data;
+            }
+            */
+            
+            // For now, only update the name field from auth metadata
+            const displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Learner';
+            userProfileData.name = displayName;
+
+            // Render the settings page with the fetched data
+            if (currentView === 'settings') {
+                renderSettingsView();
+            }
+        }
+
+        /**
+         * Mocks updating the user profile data (bio, location) in a Supabase table.
+         */
+        window.updateUserProfile = async function() {
+            const newBio = document.getElementById('profile-bio').value;
+            const newLocation = document.getElementById('profile-location').value;
+
+            // Basic validation
+            if (newBio.length > 150) {
+                 showModal("Validation Error", "Bio must be 150 characters or less.", "alert-triangle");
+                 return;
+            }
+
+            userProfileData.bio = newBio;
+            userProfileData.location = newLocation;
+
+            // NOTE: In a live app, you would perform an upsert (insert or update) 
+            // operation to the 'user_profiles' table here.
+
+            // Example Supabase upsert logic (commented out):
+            /*
+            const { error } = await supabase
+                .from('user_profiles')
+                .upsert({ 
+                    user_id: currentUser.id, 
+                    bio: newBio, 
+                    location: newLocation 
+                });
+
+            if (error) {
+                showModal("Update Failed", error.message, "alert-circle");
+                return;
+            }
+            */
+
+            showModal("Profile Saved!", "Your account settings have been updated.", "check-circle");
+            renderApp(); // Rerender to reflect potential name changes, etc.
+        }
+
+        // --- View Navigation ---
+
+        /**
+         * Handles routing between different application views.
+         */
+        window.navigateTo = function(view) {
+            if (!currentUser && view !== 'about') {
+                // Prevent navigation if not logged in (except for About page)
+                view = 'dashboard';
+            }
+            
+            // Update URL hash without firing onhashchange event handler (to avoid loops)
+            if (currentView !== view) {
+                history.pushState(null, null, `#${view}`);
+            }
+            currentView = view;
+            renderApp();
+        };
+        
+        // Handle browser back/forward buttons
+        window.onhashchange = function() {
+            const newView = window.location.hash.substring(1) || 'dashboard';
+            // Only call renderApp if the view actually changed from an external navigation action
+            if (currentView !== newView) {
+                currentView = newView;
+                renderApp();
+            }
+        };
+
+
+        // --- Utility Functions (Modal, Clipboard) ---
+
         window.closeModal = function() {
             const modal = document.getElementById('mock-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            hideSpinner(); // Always hide spinner when closing modal
+            hideSpinner();
         }
 
-        /**
-         * Shows the mock modal with a specific title, message, and icon.
-         * @param {string} title - The title of the modal.
-         * @param {string} message - The message content of the modal.
-         * @param {string} icon - The Lucide icon name (e.g., 'check-circle').
-         * @param {boolean} showSpinner - Whether to show a spinner instead of the icon initially.
-         */
         function showModal(title, message, icon, showSpinner = false) {
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-message').textContent = message;
@@ -384,24 +558,17 @@
                 modalIcon.setAttribute('data-lucide', icon || 'check-circle');
             }
             
-            // Re-render icons if needed
             if (window.lucide) lucide.createIcons();
             
             document.getElementById('mock-modal').classList.remove('hidden');
             document.getElementById('mock-modal').classList.add('flex');
         }
 
-        /**
-         * Hides the modal spinner.
-         */
         function hideSpinner() {
             document.getElementById('modal-spinner').classList.add('hidden');
-            document.getElementById('modal-icon').classList.remove('hidden'); // Ensure icon placeholder is visible
+            document.getElementById('modal-icon').classList.remove('hidden'); 
         }
 
-        /**
-         * Copies text to the clipboard and shows a confirmation modal.
-         */
         window.copyToClipboard = function(textToCopy, courseId) {
             const textarea = document.getElementById('clipboard-helper');
             textarea.value = textToCopy;
@@ -416,16 +583,10 @@
             }
         }
 
-        /**
-         * Simulates starting a course.
-         */
         window.startCourse = function(courseId, courseTitle) {
             showModal("Course Started!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
         }
 
-        /**
-         * Hides the initial loading overlay and shows the main app content.
-         */
         function hideLoadingOverlay() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const app = document.getElementById('app');
@@ -445,11 +606,8 @@
             const authSection = document.getElementById('auth-section');
             let content = '';
             
-            // Supabase user check (currentUser will be null if signed out)
             if (currentUser) {
-                // Logged In: Show profile initials and Sign Out button
-                // Supabase user metadata may contain user_metadata.full_name or email
-                const displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Learner';
+                const displayName = userProfileData.name || currentUser.email || 'Learner';
                 const initials = (displayName.match(/\b\w/g) || []).join('').toUpperCase() || 'L';
                 
                 content = `
@@ -462,9 +620,9 @@
                         <i data-lucide="log-out" class="w-4 h-4 text-gray-600 group-hover:text-white mr-1 hidden sm:inline"></i>
                     </button>
                 `;
+                authSection.innerHTML = content;
 
-                // Update Welcome Header
-                document.getElementById('welcome-header').textContent = `Welcome Back, ${displayName.split(' ')[0]}!`;
+                document.getElementById('welcome-header').textContent = `Hello, ${displayName.split(' ')[0]}!`;
 
             } else {
                 // Logged Out: Show Sign In button
@@ -474,17 +632,90 @@
                         Sign In
                     </button>
                 `;
-
-                // Reset Welcome Header 
-                 document.getElementById('welcome-header').textContent = `Welcome Back!`;
+                authSection.innerHTML = content;
             }
-
-            authSection.innerHTML = content;
+        }
+        
+        /**
+         * Renders the settings view with current profile data.
+         */
+        function renderSettingsView() {
+            if (currentUser) {
+                // Pre-fill fields with user data
+                document.getElementById('profile-name').value = userProfileData.name;
+                document.getElementById('profile-bio').value = userProfileData.bio || '';
+                document.getElementById('profile-location').value = userProfileData.location || '';
+            }
         }
 
         /**
-         * Generates the HTML string for a single statistic card.
+         * Main function to render the entire application based on auth state and current view.
          */
+        function renderApp() {
+            renderAuthSection();
+
+            const allViews = document.querySelectorAll('.app-view');
+            const loggedOutView = document.getElementById('logged-out-view');
+            const subtitleElement = document.getElementById('welcome-subtitle');
+            
+            // 1. Handle navigation visibility and active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('nav-active');
+                if (link.id === `nav-${currentView}`) {
+                    link.classList.add('nav-active');
+                }
+            });
+
+
+            if (currentUser) {
+                // Logged In: Show selected view and hide logged-out view
+                loggedOutView.classList.add('hidden');
+                
+                // Hide all authenticated views
+                allViews.forEach(view => {
+                    view.classList.add('hidden');
+                    view.classList.add('opacity-0');
+                });
+                
+                // Show the current view
+                const viewElement = document.getElementById(`${currentView}-view`) || document.getElementById('dashboard-view');
+                viewElement.classList.remove('hidden');
+                
+                // Trigger fade-in animation
+                setTimeout(() => {
+                    viewElement.classList.remove('opacity-0');
+                }, 10); 
+
+                // 2. Render specific view content
+                if (currentView === 'dashboard' || currentView === 'catalog') {
+                    // Render mock data
+                    const hasProgress = mockUserData.inProgressCourses.length > 0;
+                    if (hasProgress) {
+                        subtitleElement.textContent = "Continue your journey and track your progress.";
+                    } else {
+                        subtitleElement.textContent = "Your learning adventure starts now. Explore our catalog below!";
+                    }
+
+                    document.getElementById('stats-container').innerHTML = mockUserData.stats.map(createStatCard).join('');
+                    document.getElementById('in-progress-courses').innerHTML = mockUserData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
+                    document.getElementById('recommended-courses').innerHTML = mockUserData.recommendedCourses.map((course, index) => createCourseCard(course, false, index)).join('');
+                
+                } else if (currentView === 'settings') {
+                    renderSettingsView(); // Render settings page content
+                }
+                
+            } else {
+                // Logged Out: Show CTA to sign in
+                allViews.forEach(view => view.classList.add('hidden'));
+                loggedOutView.classList.remove('hidden');
+            }
+            
+            // Re-initialize Lucide Icons after content is rendered
+            lucide.createIcons();
+        }
+
+
+        // --- Course/Stat Card Rendering Functions (Unchanged) ---
         function createStatCard(stat, index) {
             return `
                 <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-4 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-slide-fade-in" style="animation-delay: ${index * 0.1}s;">
@@ -498,10 +729,7 @@
                 </div>
             `;
         }
-
-        /**
-         * Generates the HTML string for a single course card.
-         */
+        
         function createCourseCard(course, isInProgress, index) {
             const progress = course.progress;
             const progressColor = progress >= 75 ? 'bg-green-500' : progress >= 40 ? 'bg-knowsta-500' : 'bg-orange-500';
@@ -560,46 +788,6 @@
             `;
         }
 
-        /**
-         * Main function to render the entire dashboard based on auth state.
-         */
-        function renderDashboard() {
-            renderAuthSection();
-            const dashboardContent = document.getElementById('dashboard-content');
-            const loggedOutView = document.getElementById('logged-out-view');
-
-            // Check if user is logged in
-            if (currentUser) {
-                 // Logged In: Show Dashboard
-                dashboardContent.classList.remove('hidden');
-                
-                // Trigger transition effect by ensuring element is visible and then removing opacity-0
-                // Use a slight delay to ensure the display change takes effect
-                setTimeout(() => {
-                    dashboardContent.classList.remove('opacity-0');
-                }, 10); 
-                
-                loggedOutView.classList.add('hidden');
-                
-                const statsContainer = document.getElementById('stats-container');
-                statsContainer.innerHTML = mockUserData.stats.map(createStatCard).join('');
-
-                const inProgressContainer = document.getElementById('in-progress-courses');
-                inProgressContainer.innerHTML = mockUserData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
-
-                const recommendedContainer = document.getElementById('recommended-courses');
-                recommendedContainer.innerHTML = mockUserData.recommendedCourses.map((course, index) => createCourseCard(course, false, index)).join('');
-
-            } else {
-                // Logged Out: Show CTA to sign in
-                dashboardContent.classList.add('hidden');
-                dashboardContent.classList.add('opacity-0'); // Ensure it starts faded out for next login
-                loggedOutView.classList.remove('hidden');
-            }
-            
-            // Re-initialize Lucide Icons after content is rendered
-            lucide.createIcons();
-        }
 
         // Initialize the application when the window loads
         window.onload = setupSupabase;
