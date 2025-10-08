@@ -284,13 +284,20 @@
         let isLoading = true;
         let currentView = 'dashboard'; // Default view
         
-        // Mock profile data (Simulates Supabase table data)
-        let userProfileData = {
+        // Default (zeroed) profile data structure for a new user
+        const DEFAULT_PROFILE_DATA = {
             name: '',
-            bio: "I'm interested in advancing my career in data science and product management.",
-            location: "New York, NY",
-            coursesCompleted: 3
+            bio: "Tell us a little about your learning goals...",
+            location: "",
+            coursesStarted: 0,
+            certificatesEarned: 0,
+            hoursSpent: 0,
+            inProgressCourses: [],
         };
+
+        // Profile data storage (will hold the merged data)
+        let userProfileData = { ...DEFAULT_PROFILE_DATA };
+
 
         // Colors for instructor avatars
         const instructorAvatarColors = [
@@ -298,25 +305,26 @@
             'bg-instructor-purple', 'bg-instructor-yellow', 'bg-instructor-teal'
         ];
 
-        // Mock User Data Structure (Static course and stats list)
-        const mockUserData = {
-            stats: [
-                { title: "Courses Started", value: 7, icon: "graduation-cap", color: "text-blue-500" },
-                { title: "Certificates Earned", value: 3, icon: "award", color: "text-green-500" },
-                { title: "Hours Spent (Total)", value: 42.5, icon: "clock", color: "text-orange-500" },
-            ],
+        // Mock Course Catalog (Used for Recommended/New User view)
+        const mockCourseCatalog = [
+            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React' },
+            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud' },
+            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business' },
+            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing' },
+        ];
+        
+        // Mock Progress Data (Simulating a returning user's data)
+        const mockReturningUserData = {
+            coursesStarted: 7,
+            certificatesEarned: 3,
+            hoursSpent: 42.5,
             inProgressCourses: [
                 { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design' },
                 { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python' },
                 { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance' },
             ],
-            recommendedCourses: [
-                { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React' },
-                { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud' },
-                { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business' },
-                { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing' },
-            ]
         };
+
 
         /**
          * Utility function to get the current Supabase client.
@@ -352,7 +360,7 @@
                         fetchUserProfile();
                         showModal("Welcome!", "You are now signed in to Knowsta Learn.", "check-circle");
                     } else if (event === 'SIGNED_OUT') {
-                         userProfileData = { name: '', bio: '', location: '', coursesCompleted: 0 };
+                         userProfileData = { ...DEFAULT_PROFILE_DATA }; // Reset to default structure
                     }
                 });
                 
@@ -437,26 +445,31 @@
         // --- Supabase Database Mock/Placeholder Functions ---
 
         /**
-         * Mocks fetching the user profile data (bio, location) from a Supabase table.
+         * Mocks fetching the user profile data (bio, location, stats) from a Supabase table.
+         * Sets default/zeroed data if no profile is found.
          */
         async function fetchUserProfile() {
-            // NOTE: In a live app, you would fetch data from the 'user_profiles' table here.
-            
-            // Example Supabase fetch logic (commented out):
-            /*
-            const { data, error } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .single();
-            if (data) {
-                userProfileData = data;
-            }
-            */
-            
-            // For now, only update the name field from auth metadata
             const displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Learner';
-            userProfileData.name = displayName;
+            
+            // 1. Reset to default and apply name from Auth
+            userProfileData = { ...DEFAULT_PROFILE_DATA, name: displayName };
+            
+            // 2. MOCK DATA CHECK: In a live app, you'd check a Supabase table here.
+            
+            // MOCK LOGIC: We will assume a user who has 'L' in their initials (like 'Learner') is new, 
+            // and anyone else is a returning user (for demonstration purposes).
+            const isReturningUserMock = !displayName.toUpperCase().includes('L'); 
+
+            if (isReturningUserMock) {
+                // If returning, merge mock progress data (simulating DB retrieval)
+                userProfileData = {
+                    ...userProfileData,
+                    ...mockReturningUserData,
+                    bio: "I'm interested in advancing my career in data science and product management.",
+                    location: "New York, NY",
+                };
+            }
+            // If new user, userProfileData remains DEFAULT_PROFILE_DATA (zeroed)
 
             // Render the settings page with the fetched data
             if (currentView === 'settings') {
@@ -468,6 +481,11 @@
          * Mocks updating the user profile data (bio, location) in a Supabase table.
          */
         window.updateUserProfile = async function() {
+            if (!currentUser) {
+                showModal("Error", "You must be signed in to update your profile.", "alert-circle");
+                return;
+            }
+            
             const newBio = document.getElementById('profile-bio').value;
             const newLocation = document.getElementById('profile-location').value;
 
@@ -479,19 +497,23 @@
 
             userProfileData.bio = newBio;
             userProfileData.location = newLocation;
+            
+            // --- LIVE SUPABASE LOGIC GOES HERE ---
+            showModal("Saving Profile...", "Updating your profile information...", "loader-2", true);
 
-            // NOTE: In a live app, you would perform an upsert (insert or update) 
-            // operation to the 'user_profiles' table here.
-
-            // Example Supabase upsert logic (commented out):
             /*
+            // 1. Define the data to upsert
+            const profileUpdate = { 
+                id: currentUser.id, // Supabase recommends using auth.uid as primary key
+                bio: newBio, 
+                location: newLocation,
+                updated_at: new Date(),
+            };
+            
+            // 2. Execute the upsert (insert or update) operation in the 'user_profiles' table
             const { error } = await supabase
                 .from('user_profiles')
-                .upsert({ 
-                    user_id: currentUser.id, 
-                    bio: newBio, 
-                    location: newLocation 
-                });
+                .upsert(profileUpdate, { onConflict: 'id' });
 
             if (error) {
                 showModal("Update Failed", error.message, "alert-circle");
@@ -499,8 +521,13 @@
             }
             */
 
-            showModal("Profile Saved!", "Your account settings have been updated.", "check-circle");
-            renderApp(); // Rerender to reflect potential name changes, etc.
+            // --- END LIVE SUPABASE LOGIC ---
+
+            // Mock success and re-render
+            setTimeout(() => {
+                showModal("Profile Saved!", "Your account settings have been updated.", "check-circle");
+                renderApp(); 
+            }, 500);
         }
 
         // --- View Navigation ---
@@ -688,17 +715,29 @@
 
                 // 2. Render specific view content
                 if (currentView === 'dashboard' || currentView === 'catalog') {
-                    // Render mock data
-                    const hasProgress = mockUserData.inProgressCourses.length > 0;
+                    
+                    const hasProgress = userProfileData.inProgressCourses.length > 0 || userProfileData.coursesStarted > 0;
                     if (hasProgress) {
                         subtitleElement.textContent = "Continue your journey and track your progress.";
                     } else {
+                        // NEW USER: Zero progress message
                         subtitleElement.textContent = "Your learning adventure starts now. Explore our catalog below!";
                     }
+                    
+                    // STATS: Use dynamic userProfileData
+                    const dashboardStats = [
+                        { title: "Courses Started", value: userProfileData.coursesStarted, icon: "graduation-cap", color: "text-blue-500" },
+                        { title: "Certificates Earned", value: userProfileData.certificatesEarned, icon: "award", color: "text-green-500" },
+                        { title: "Hours Spent (Total)", value: userProfileData.hoursSpent, icon: "clock", color: "text-orange-500" },
+                    ];
 
-                    document.getElementById('stats-container').innerHTML = mockUserData.stats.map(createStatCard).join('');
-                    document.getElementById('in-progress-courses').innerHTML = mockUserData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
-                    document.getElementById('recommended-courses').innerHTML = mockUserData.recommendedCourses.map((course, index) => createCourseCard(course, false, index)).join('');
+                    document.getElementById('stats-container').innerHTML = dashboardStats.map(createStatCard).join('');
+
+                    // COURSES IN PROGRESS: Use dynamic userProfileData
+                    document.getElementById('in-progress-courses').innerHTML = userProfileData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
+
+                    // RECOMMENDED COURSES: Use static mock catalog
+                    document.getElementById('recommended-courses').innerHTML = mockCourseCatalog.map((course, index) => createCourseCard(course, false, index)).join('');
                 
                 } else if (currentView === 'settings') {
                     renderSettingsView(); // Render settings page content
