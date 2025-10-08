@@ -129,8 +129,8 @@
             
             <!-- VIEW: Dashboard / My Learning (Default Authenticated View) --><div id="dashboard-view" class="app-view opacity-0 transition-opacity duration-500">
                 <!-- Welcome & Key Stats Section (High-level data, clean cards) --><section class="mb-8">
-                    <!-- Greeting is now dynamic, updated in JS --><h1 id="welcome-header" class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Welcome!</h1>
-                    <!-- Subtitle is now dynamic, updated in JS --><p id="welcome-subtitle" class="text-gray-500 mb-6">Continue your journey and track your progress.</p>
+                    <!-- Greeting is now dynamic, updated in JS --><h1 id="welcome-header" class="text-4xl font-extrabold text-gray-800 mb-2">Welcome!</h1>
+                    <!-- Subtitle is now dynamic, updated in JS --><p id="welcome-subtitle" class="text-lg text-gray-500 mb-6">Continue your journey and track your progress.</p>
                     
                     <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Stat Cards will be rendered here by JS --></div>
@@ -143,6 +143,9 @@
                     </h2>
                     <div id="in-progress-courses" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <!-- Course cards will be rendered here by JS --></div>
+                    <div id="no-progress-message" class="hidden text-center p-8 bg-white rounded-xl border border-gray-100 mt-6">
+                        <p class="text-gray-500 text-lg">You haven't started any courses yet. Enroll below to begin!</p>
+                    </div>
                 </section>
 
                 <!-- Recommended Courses Section --><section class="mb-12">
@@ -209,6 +212,29 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- VIEW: Course Detail (New Placeholder View) --><div id="course-view" class="app-view hidden opacity-0 transition-opacity duration-500">
+                <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <button onclick="navigateTo('dashboard')" class="text-sm text-knowsta-500 flex items-center mb-6 hover:text-knowsta-600">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Dashboard
+                    </button>
+                    <h1 id="course-title-detail" class="text-4xl font-extrabold text-gray-800 mb-4">Course Title Placeholder</h1>
+                    <p class="text-lg text-gray-600 mb-8" id="course-details-description">
+                        This is the detail view for the course. Here you would find module lists, lecture videos, and enrollment buttons.
+                    </p>
+                    <div id="course-details-content" class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-xl font-semibold">Course Overview</h3>
+                            <p class="text-gray-600">This module provides an introduction to the core concepts.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-xl font-semibold">Enrollment Status</h3>
+                            <p class="text-green-600 font-medium">You are currently enrolled in this course.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- VIEW: About Knowsta Learn --><div id="about-view" class="app-view hidden opacity-0 transition-opacity duration-500">
                 <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
@@ -292,7 +318,7 @@
             coursesStarted: 0,
             certificatesEarned: 0,
             hoursSpent: 0,
-            inProgressCourses: [],
+            inProgressCourses: [], // This should be empty for new users
         };
 
         // Profile data storage (will hold the merged data)
@@ -307,10 +333,10 @@
 
         // Mock Course Catalog (Used for Recommended/New User view)
         const mockCourseCatalog = [
-            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React' },
-            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud' },
-            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business' },
-            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing' },
+            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React', description: "Deep dive into state management using modern React hooks and the Context API." },
+            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud', description: "Learn the fundamentals of Google Cloud Platform, including Compute Engine and Storage." },
+            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business', description: "Master proven strategies to negotiate effectively in both professional and personal scenarios." },
+            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing', description: "A comprehensive workshop covering plot, character development, and narrative voice." },
         ];
         
         // Mock Progress Data (Simulating a returning user's data)
@@ -319,11 +345,14 @@
             certificatesEarned: 3,
             hoursSpent: 42.5,
             inProgressCourses: [
-                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design' },
-                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python' },
-                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance' },
+                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design', description: "Build beautiful, responsive web interfaces using the utility-first framework, Tailwind CSS." },
+                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python', description: "Foundational course on Python programming tailored for data analysis and visualization." },
+                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance', description: "Develop practical skills in creating and analyzing professional financial models." },
             ],
         };
+
+        // Consolidated list of all mock courses for easy lookup
+        const allMockCourses = [...mockCourseCatalog, ...mockReturningUserData.inProgressCourses];
 
 
         /**
@@ -456,12 +485,13 @@
             
             // 2. MOCK DATA CHECK: In a live app, you'd check a Supabase table here.
             
-            // MOCK LOGIC: We will assume a user who has 'L' in their initials (like 'Learner') is new, 
-            // and anyone else is a returning user (for demonstration purposes).
-            const isReturningUserMock = !displayName.toUpperCase().includes('L'); 
+            // MOCK LOGIC: We will assume a user whose full name is 'Learner' is new (which happens if Google Auth doesn't return a name).
+            // A more robust mock: If the first letter of the name is 'N' (New User test), assume they are new.
+            const firstName = displayName.split(' ')[0];
+            const isNewUserMock = firstName.toLowerCase() === 'learner' || firstName.toLowerCase().startsWith('n'); 
 
-            if (isReturningUserMock) {
-                // If returning, merge mock progress data (simulating DB retrieval)
+            if (!isNewUserMock) {
+                // If RETURNING, merge mock progress data (simulating DB retrieval)
                 userProfileData = {
                     ...userProfileData,
                     ...mockReturningUserData,
@@ -535,15 +565,20 @@
         /**
          * Handles routing between different application views.
          */
-        window.navigateTo = function(view) {
+        window.navigateTo = function(view, courseId = null) {
             if (!currentUser && view !== 'about') {
-                // Prevent navigation if not logged in (except for About page)
                 view = 'dashboard';
             }
             
-            // Update URL hash without firing onhashchange event handler (to avoid loops)
+            let hash = view;
+            if (view === 'course' && courseId !== null) {
+                hash = `course/${courseId}`;
+                // Render course details immediately for a smoother transition
+                renderCourseDetailView(courseId);
+            }
+            
             if (currentView !== view) {
-                history.pushState(null, null, `#${view}`);
+                history.pushState(null, null, `#${hash}`);
             }
             currentView = view;
             renderApp();
@@ -551,13 +586,54 @@
         
         // Handle browser back/forward buttons
         window.onhashchange = function() {
-            const newView = window.location.hash.substring(1) || 'dashboard';
-            // Only call renderApp if the view actually changed from an external navigation action
+            const hash = window.location.hash.substring(1) || 'dashboard';
+            const parts = hash.split('/');
+            const newView = parts[0];
+            
             if (currentView !== newView) {
                 currentView = newView;
                 renderApp();
             }
+
+            if (newView === 'course' && parts.length > 1) {
+                renderCourseDetailView(parseInt(parts[1]));
+            }
         };
+
+        /**
+         * Populates the course detail view with data for a specific course ID.
+         */
+        function renderCourseDetailView(courseId) {
+            const course = allMockCourses.find(c => c.id === courseId);
+            
+            document.getElementById('course-title-detail').textContent = course ? course.title : 'Course Not Found';
+            document.getElementById('course-details-description').textContent = course ? course.description : 'The requested course could not be loaded.';
+            
+            // Mock content generation for the details section
+            const content = course ? `
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-xl font-semibold text-knowsta-500">Instructor:</h3>
+                    <p class="text-gray-800 text-lg">${course.instructor}</p>
+                </div>
+                <div class="p-4 bg-knowsta-50 rounded-lg">
+                    <h3 class="text-xl font-semibold text-knowsta-500">Category:</h3>
+                    <p class="text-gray-800 text-lg">${course.category}</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-xl font-semibold text-knowsta-500">Status:</h3>
+                    <p class="${course.progress > 0 ? 'text-green-600' : 'text-gray-600'} font-medium text-lg">
+                        ${course.progress > 0 ? `In Progress (${course.progress}%)` : 'Ready to Start'}
+                    </p>
+                </div>
+                <div class="pt-4 flex justify-end">
+                    <button onclick="startCourse(${course.id}, '${course.title}')" class="px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        ${course.progress > 0 ? 'Continue Learning' : 'Start Course Now'}
+                    </button>
+                </div>
+            ` : `<div class="p-8 text-center text-red-500">Error: Course ID ${courseId} is invalid.</div>`;
+
+            document.getElementById('course-details-content').innerHTML = content;
+        }
 
 
         // --- Utility Functions (Modal, Clipboard) ---
@@ -611,7 +687,8 @@
         }
 
         window.startCourse = function(courseId, courseTitle) {
-            showModal("Course Started!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
+            // In a real app, this would update the Supabase database
+            showModal("Course Enrolled!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
         }
 
         function hideLoadingOverlay() {
@@ -684,6 +761,7 @@
             const allViews = document.querySelectorAll('.app-view');
             const loggedOutView = document.getElementById('logged-out-view');
             const subtitleElement = document.getElementById('welcome-subtitle');
+            const noProgressMessage = document.getElementById('no-progress-message');
             
             // 1. Handle navigation visibility and active state
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -717,11 +795,14 @@
                 if (currentView === 'dashboard' || currentView === 'catalog') {
                     
                     const hasProgress = userProfileData.inProgressCourses.length > 0 || userProfileData.coursesStarted > 0;
+                    
                     if (hasProgress) {
                         subtitleElement.textContent = "Continue your journey and track your progress.";
+                        noProgressMessage.classList.add('hidden');
                     } else {
                         // NEW USER: Zero progress message
                         subtitleElement.textContent = "Your learning adventure starts now. Explore our catalog below!";
+                        noProgressMessage.classList.remove('hidden');
                     }
                     
                     // STATS: Use dynamic userProfileData
@@ -808,7 +889,7 @@
                 : `<div class="mt-4 h-9"></div>`; // Placeholder for consistent height
 
             return `
-                <div class="bg-white shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer flex flex-col animate-slide-fade-in" style="animation-delay: ${index * 0.08}s;">
+                <div onclick="navigateTo('course', ${course.id})" class="bg-white shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer flex flex-col animate-slide-fade-in" style="animation-delay: ${index * 0.08}s;">
                     <div class="h-40 bg-gray-100 overflow-hidden">
                         <img src="${course.image}" alt="${course.title}" class="w-full h-full object-cover">
                     </div>
