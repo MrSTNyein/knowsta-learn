@@ -62,6 +62,19 @@
             border-bottom: 2px solid #4f46e5;
             padding-bottom: 4px;
         }
+        /* Aspect ratio for the video player */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -219,19 +232,35 @@
                         <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Dashboard
                     </button>
                     <h1 id="course-title-detail" class="text-4xl font-extrabold text-gray-800 mb-4">Course Title Placeholder</h1>
-                    <p class="text-lg text-gray-600 mb-8" id="course-details-description">
-                        This is the detail view for the course. Here you would find module lists, lecture videos, and enrollment buttons.
-                    </p>
-                    <div id="course-details-content" class="space-y-4">
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h3 class="text-xl font-semibold">Course Overview</h3>
-                            <p class="text-gray-600">This module provides an introduction to the core concepts.</p>
+                    
+                    <!-- Main Content Grid: Video and Lesson List -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Video Player (2/3 width on large screens) -->
+                        <div class="lg:col-span-2">
+                            <div class="video-container rounded-xl overflow-hidden shadow-lg mb-6">
+                                <iframe id="course-video-player" width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Course Description</h2>
+                            <p class="text-gray-600 mb-6" id="course-details-description">Description placeholder.</p>
                         </div>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h3 class="text-xl font-semibold">Enrollment Status</h3>
-                            <p class="text-green-600 font-medium">You are currently enrolled in this course.</p>
+
+                        <!-- Lesson List (1/3 width on large screens) -->
+                        <div class="lg:col-span-1 bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-100">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <i data-lucide="list-check" class="w-5 h-5 mr-2 text-knowsta-500"></i> Lessons
+                            </h2>
+                            <div id="course-lesson-list" class="space-y-3">
+                                <!-- Lessons populated by JS -->
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Enrollment/Status Footer -->
+                    <div id="course-details-footer" class="mt-8 border-t pt-4 flex justify-between items-center">
+                        <div id="course-status"></div>
+                        <div id="course-action"></div>
+                    </div>
+
                 </div>
             </div>
 
@@ -330,13 +359,36 @@
             'bg-instructor-blue', 'bg-instructor-green', 'bg-instructor-red', 
             'bg-instructor-purple', 'bg-instructor-yellow', 'bg-instructor-teal'
         ];
-
-        // Mock Course Catalog (Used for Recommended/New User view)
+        
+        // --- Mock Course Data with Lessons and Video URLs ---
+        
+        // Mock Catalog (Recommended for New Users)
         const mockCourseCatalog = [
-            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React', description: "Deep dive into state management using modern React hooks and the Context API." },
-            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud', description: "Learn the fundamentals of Google Cloud Platform, including Compute Engine and Storage." },
-            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business', description: "Master proven strategies to negotiate effectively in both professional and personal scenarios." },
-            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing', description: "A comprehensive workshop covering plot, character development, and narrative voice." },
+            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React', description: "Deep dive into state management using modern React hooks and the Context API.",
+                lessons: [
+                    { title: "L1: Intro to UseReducer", url: "https://www.youtube.com/embed/dpwPve9Ym6I" },
+                    { title: "L2: Custom Hooks", url: "https://www.youtube.com/embed/rV3d-A5L5gA" },
+                    { title: "L3: Context vs Redux", url: "https://www.youtube.com/embed/fD32B8k_iS8" },
+                ]
+            },
+            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud', description: "Learn the fundamentals of Google Cloud Platform, including Compute Engine and Storage.",
+                lessons: [
+                    { title: "L1: What is the Cloud?", url: "https://www.youtube.com/embed/K95KzV9o3j0" },
+                    { title: "L2: Compute Engine Basics", url: "https://www.youtube.com/embed/a8tHhQd-F0Y" },
+                ]
+            },
+            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business', description: "Master proven strategies to negotiate effectively in both professional and personal scenarios.",
+                lessons: [
+                    { title: "L1: Win-Win Strategies", url: "https://www.youtube.com/embed/I6l9w1L1Fv8" },
+                    { title: "L2: Reading Body Language", url: "https://www.youtube.com/embed/320V-J5p66E" },
+                ]
+            },
+            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing', description: "A comprehensive workshop covering plot, character development, and narrative voice.",
+                 lessons: [
+                    { title: "L1: Plot Structure", url: "https://www.youtube.com/embed/uD3l3fL9K-w" },
+                    { title: "L2: Character Arc", url: "https://www.youtube.com/embed/pQeM-4z1g0o" },
+                ]
+            },
         ];
         
         // Mock Progress Data (Simulating a returning user's data)
@@ -345,14 +397,34 @@
             certificatesEarned: 3,
             hoursSpent: 42.5,
             inProgressCourses: [
-                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design', description: "Build beautiful, responsive web interfaces using the utility-first framework, Tailwind CSS." },
-                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python', description: "Foundational course on Python programming tailored for data analysis and visualization." },
-                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance', description: "Develop practical skills in creating and analyzing professional financial models." },
+                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design', description: "Build beautiful, responsive web interfaces using the utility-first framework, Tailwind CSS.", 
+                    lessons: [
+                        { title: "M1: Setup and Typography", url: "https://www.youtube.com/embed/u_Jk9eFw0tA" },
+                        { title: "M2: Responsive Grids", url: "https://www.youtube.com/embed/I0T1Yp1tT1Q" },
+                        { title: "M3: Components and State", url: "https://www.youtube.com/embed/P_P_P_P_P_P" }, // Mock incomplete lesson URL
+                    ]
+                },
+                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python', description: "Foundational course on Python programming tailored for data analysis and visualization.", 
+                    lessons: [
+                        { title: "M1: Python Setup", url: "https://www.youtube.com/embed/RF_0yT5Y04Q" },
+                        { title: "M2: Pandas Dataframes", url: "https://www.youtube.com/embed/cKx-K8yM5xY" },
+                        { title: "M3: Intro to Matplotlib", url: "https://www.youtube.com/embed/xR3qg9uN_kM" },
+                    ]
+                },
+                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance', description: "Develop practical skills in creating and analyzing professional financial models.",
+                    lessons: [
+                        { title: "M1: Financial Statement Review", url: "https://www.youtube.com/embed/T6xY1V4Yy6w" },
+                        { title: "M2: Discounted Cash Flow", url: "https://www.youtube.com/embed/x0wV8m8j8Ww" },
+                    ]
+                },
             ],
         };
 
         // Consolidated list of all mock courses for easy lookup
-        const allMockCourses = [...mockCourseCatalog, ...mockReturningUserData.inProgressCourses];
+        const allMockCourses = [...mockCourseCatalog, ...mockReturningUserData.inProgressCourses].reduce((acc, course) => {
+            acc[course.id] = course;
+            return acc;
+        }, {});
 
 
         /**
@@ -375,7 +447,7 @@
                 supabase = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
                 // Initialize currentView from hash on load
-                currentView = window.location.hash.substring(1) || 'dashboard';
+                currentView = window.location.hash.substring(1).split('/')[0] || 'dashboard';
 
                 // 2. Listen for authentication state changes
                 supabase.auth.onAuthStateChange((event, session) => {
@@ -485,10 +557,9 @@
             
             // 2. MOCK DATA CHECK: In a live app, you'd check a Supabase table here.
             
-            // MOCK LOGIC: We will assume a user whose full name is 'Learner' is new (which happens if Google Auth doesn't return a name).
-            // A more robust mock: If the first letter of the name is 'N' (New User test), assume they are new.
+            // MOCK LOGIC: If the first letter of the name is 'N' (New User test) or 'L' (Learner fallback), assume they are new.
             const firstName = displayName.split(' ')[0];
-            const isNewUserMock = firstName.toLowerCase() === 'learner' || firstName.toLowerCase().startsWith('n'); 
+            const isNewUserMock = firstName.toLowerCase().startsWith('n') || firstName.toLowerCase() === 'learner'; 
 
             if (!isNewUserMock) {
                 // If RETURNING, merge mock progress data (simulating DB retrieval)
@@ -499,7 +570,7 @@
                     location: "New York, NY",
                 };
             }
-            // If new user, userProfileData remains DEFAULT_PROFILE_DATA (zeroed)
+            // If new user, userProfileData remains the zeroed DEFAULT_PROFILE_DATA (with name filled).
 
             // Render the settings page with the fetched data
             if (currentView === 'settings') {
@@ -531,25 +602,7 @@
             // --- LIVE SUPABASE LOGIC GOES HERE ---
             showModal("Saving Profile...", "Updating your profile information...", "loader-2", true);
 
-            /*
-            // 1. Define the data to upsert
-            const profileUpdate = { 
-                id: currentUser.id, // Supabase recommends using auth.uid as primary key
-                bio: newBio, 
-                location: newLocation,
-                updated_at: new Date(),
-            };
-            
-            // 2. Execute the upsert (insert or update) operation in the 'user_profiles' table
-            const { error } = await supabase
-                .from('user_profiles')
-                .upsert(profileUpdate, { onConflict: 'id' });
-
-            if (error) {
-                showModal("Update Failed", error.message, "alert-circle");
-                return;
-            }
-            */
+            /* (Supabase update logic example) */
 
             // --- END LIVE SUPABASE LOGIC ---
 
@@ -573,8 +626,6 @@
             let hash = view;
             if (view === 'course' && courseId !== null) {
                 hash = `course/${courseId}`;
-                // Render course details immediately for a smoother transition
-                renderCourseDetailView(courseId);
             }
             
             if (currentView !== view) {
@@ -582,6 +633,11 @@
             }
             currentView = view;
             renderApp();
+            
+            // Special handling for course view as it needs data loaded
+            if (view === 'course' && courseId !== null) {
+                 renderCourseDetailView(courseId);
+            }
         };
         
         // Handle browser back/forward buttons
@@ -589,14 +645,15 @@
             const hash = window.location.hash.substring(1) || 'dashboard';
             const parts = hash.split('/');
             const newView = parts[0];
+            const courseId = parts[1] ? parseInt(parts[1]) : null;
             
             if (currentView !== newView) {
                 currentView = newView;
                 renderApp();
             }
 
-            if (newView === 'course' && parts.length > 1) {
-                renderCourseDetailView(parseInt(parts[1]));
+            if (newView === 'course' && courseId) {
+                renderCourseDetailView(courseId);
             }
         };
 
@@ -604,35 +661,61 @@
          * Populates the course detail view with data for a specific course ID.
          */
         function renderCourseDetailView(courseId) {
-            const course = allMockCourses.find(c => c.id === courseId);
+            const course = allMockCourses[courseId];
+            const videoPlayer = document.getElementById('course-video-player');
+            const lessonList = document.getElementById('course-lesson-list');
+            const courseStatus = document.getElementById('course-status');
+            const courseAction = document.getElementById('course-action');
             
-            document.getElementById('course-title-detail').textContent = course ? course.title : 'Course Not Found';
-            document.getElementById('course-details-description').textContent = course ? course.description : 'The requested course could not be loaded.';
+            if (!course) {
+                 // Handle course not found
+                 document.getElementById('course-title-detail').textContent = 'Course Not Found (ID: ' + courseId + ')';
+                 return;
+            }
             
-            // Mock content generation for the details section
-            const content = course ? `
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-xl font-semibold text-knowsta-500">Instructor:</h3>
-                    <p class="text-gray-800 text-lg">${course.instructor}</p>
-                </div>
-                <div class="p-4 bg-knowsta-50 rounded-lg">
-                    <h3 class="text-xl font-semibold text-knowsta-500">Category:</h3>
-                    <p class="text-gray-800 text-lg">${course.category}</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-xl font-semibold text-knowsta-500">Status:</h3>
-                    <p class="${course.progress > 0 ? 'text-green-600' : 'text-gray-600'} font-medium text-lg">
-                        ${course.progress > 0 ? `In Progress (${course.progress}%)` : 'Ready to Start'}
-                    </p>
-                </div>
-                <div class="pt-4 flex justify-end">
-                    <button onclick="startCourse(${course.id}, '${course.title}')" class="px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
-                        ${course.progress > 0 ? 'Continue Learning' : 'Start Course Now'}
-                    </button>
-                </div>
-            ` : `<div class="p-8 text-center text-red-500">Error: Course ID ${courseId} is invalid.</div>`;
+            // 1. Course Details
+            document.getElementById('course-title-detail').textContent = course.title;
+            document.getElementById('course-details-description').textContent = course.description;
+            
+            // 2. Video Player (Defaults to the first lesson)
+            const firstLessonUrl = course.lessons[0].url;
+            videoPlayer.src = firstLessonUrl;
 
-            document.getElementById('course-details-content').innerHTML = content;
+            // 3. Lesson List
+            lessonList.innerHTML = course.lessons.map((lesson, index) => `
+                <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-white transition duration-150 cursor-pointer">
+                    <i data-lucide="${index === 0 ? 'play-circle' : 'file-text'}" class="w-5 h-5 flex-shrink-0 mt-0.5 ${index === 0 ? 'text-red-500' : 'text-knowsta-500'}"></i>
+                    <div>
+                        <p class="font-medium text-gray-800">${lesson.title}</p>
+                        <p class="text-xs text-gray-500">${index === 0 ? 'Currently Playing (0:30)' : 'Module video'}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 4. Footer Status and Action
+            const isInProgress = userProfileData.inProgressCourses.some(c => c.id === courseId) || course.progress > 0;
+            
+            if (isInProgress) {
+                courseStatus.innerHTML = `<p class="text-lg font-semibold text-green-600">Enrolled & ${course.progress}% Complete</p>`;
+                courseAction.innerHTML = `
+                    <button onclick="copyToClipboard('https://knowsta.learn/course/${course.id}', ${course.id})" class="text-sm font-medium text-knowsta-500 hover:text-knowsta-600 transition-colors flex items-center transform hover:-translate-y-0.5 active:translate-y-0.5 mr-4">
+                        <i data-lucide="share-2" class="icon-small mr-1"></i> Share
+                    </button>
+                    <button class="px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        Continue Lesson 1
+                    </button>
+                `;
+            } else {
+                 courseStatus.innerHTML = `<p class="text-lg font-semibold text-gray-600">Not Enrolled</p>`;
+                 courseAction.innerHTML = `
+                    <button onclick="startCourse(${course.id}, '${course.title}')" class="px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        Enroll for Free
+                    </button>
+                 `;
+            }
+
+            // Re-initialize icons
+            lucide.createIcons();
         }
 
 
@@ -687,7 +770,18 @@
         }
 
         window.startCourse = function(courseId, courseTitle) {
-            // In a real app, this would update the Supabase database
+            // In a real app, this would update Supabase, adding the course to the user's profile
+            
+            // MOCK: Add the course to the inProgressCourses list (if not already there)
+            const course = allMockCourses[courseId];
+            if (course && !userProfileData.inProgressCourses.some(c => c.id === courseId)) {
+                // Clone and add the course to the user's active list with 0% progress
+                userProfileData.inProgressCourses.push({ ...course, progress: 0 });
+                userProfileData.coursesStarted += 1; // Increment stat
+            }
+            
+            // Navigate to the course page immediately
+            navigateTo('course', courseId);
             showModal("Course Enrolled!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
         }
 
@@ -818,7 +912,9 @@
                     document.getElementById('in-progress-courses').innerHTML = userProfileData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
 
                     // RECOMMENDED COURSES: Use static mock catalog
-                    document.getElementById('recommended-courses').innerHTML = mockCourseCatalog.map((course, index) => createCourseCard(course, false, index)).join('');
+                    document.getElementById('recommended-courses').innerHTML = Object.values(allMockCourses)
+                        .filter(course => !userProfileData.inProgressCourses.some(c => c.id === course.id)) // Filter out already enrolled
+                        .map((course, index) => createCourseCard(course, false, index)).join('');
                 
                 } else if (currentView === 'settings') {
                     renderSettingsView(); // Render settings page content
@@ -866,11 +962,12 @@
                 </div>
             `;
             
+            // Note: The Enroll button now calls navigateTo directly, which triggers startCourse logic
             const buttonAction = isInProgress 
                 ? `<button onclick="copyToClipboard('https://knowsta.learn/course/${course.id}', ${course.id})" class="text-sm font-medium text-knowsta-500 hover:text-knowsta-600 transition-colors flex items-center transform hover:-translate-y-0.5 active:translate-y-0.5">
                       <i data-lucide="share-2" class="icon-small mr-1"></i> Share Progress
                    </button>`
-                : `<button onclick="startCourse(${course.id}, '${course.title}')" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium text-sm transform hover:-translate-y-0.5 active:translate-y-0.5">
+                : `<button onclick="event.stopPropagation(); startCourse(${course.id}, '${course.title}')" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium text-sm transform hover:-translate-y-0.5 active:translate-y-0.5">
                       Enroll for Free
                    </button>`;
 
