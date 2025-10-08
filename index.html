@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowsta Learn Dashboard</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for professional look --><script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Configure the Inter font and a light background for the clean aesthetic */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc; /* Very light, clean background */
+            overflow-x: hidden; /* Prevent horizontal scroll due to animations */
+        }
+        /* Custom Tailwind config for the primary brand color and font */
+        .logo-font {
+            font-weight: 800; 
+            letter-spacing: -0.05em;
+        }
+        /* Progress bar fill transition for smooth animation */
+        .progress-bar-fill {
+            transition: width 0.7s ease-out; /* Slower, smoother transition */
+        }
+        .icon-small {
+            width: 1rem;
+            height: 1rem;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .loading-screen {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Keyframes for modal entry animation */
+        @keyframes modal-fade-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-animated-content {
+            animation: modal-fade-in 0.3s ease-out forwards;
+        }
+
+        /* Keyframes for staggered entry animation */
+        @keyframes slide-fade-in {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-fade-in {
+            animation: slide-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Ease-out quad */
+            opacity: 0; /* Initial state before animation */
+        }
+
+        /* Override default lucide icon size for consistency */
+        i[data-lucide] {
+            stroke-width: 2.2; /* Make icons slightly bolder */
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        knowsta: {
+                            50: '#f0f3ff',
+                            100: '#d9e0ff',
+                            500: '#4f46e5', // Primary brand color (Indigo)
+                            600: '#4338ca',
+                        },
+                        // Custom colors for instructor avatars
+                        instructor: {
+                            blue: '#4f46e5',
+                            green: '#22c55e',
+                            red: '#ef4444',
+                            purple: '#a855f7',
+                            yellow: '#eab308',
+                            teal: '#14b8a6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="antialiased">
+
+    <!-- Loading Overlay (Initial state: displayed until auth checks complete) --><div id="loading-overlay" class="loading-screen fixed inset-0 z-[100] bg-white flex items-center justify-center">
+        <div class="flex flex-col items-center">
+            <svg class="animate-spin h-10 w-10 text-knowsta-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600 font-medium">Loading Knowsta Learn...</p>
+        </div>
+    </div>
+    
+    <!-- The main application container --><div id="app" class="min-h-screen opacity-0 transition-opacity duration-300">
+        
+        <!-- Header: Fixed Top Navigation Bar (Apple/Coursera style) --><header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <!-- Logo --><a href="#" class="flex items-center space-x-2">
+                    <span class="text-3xl font-extrabold text-knowsta-500 logo-font">Knowsta</span>
+                    <span class="hidden sm:inline text-xl text-gray-500">Learn</span>
+                </a>
+
+                <!-- Navigation/Search (Hidden on smaller screens) --><nav class="hidden md:flex flex-1 mx-8 items-center justify-center space-x-6 text-sm font-medium text-gray-600">
+                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Catalog</a>
+                    <a href="#" class="hover:text-knowsta-500 transition duration-150">My Learning</a>
+                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Certificates</a>
+                    <a href="#" class="hover:text-knowsta-500 transition duration-150">Support</a>
+                </nav>
+
+                <!-- Right side: Auth and Profile (Dynamic) --><div id="auth-section" class="flex items-center space-x-4">
+                    <!-- Content will be rendered by JS based on login state --></div>
+            </div>
+        </header>
+
+        <!-- Main Content Area --><main class="pt-24 p-4 md:p-8 max-w-7xl mx-auto" id="main-content">
+            <!-- Content will be hidden until authenticated --><div id="dashboard-content" class="hidden opacity-0 transition-opacity duration-500">
+                <!-- Welcome & Key Stats Section (High-level data, clean cards) --><section class="mb-8">
+                    <h1 id="welcome-header" class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
+                    <p class="text-gray-500 mb-6">Continue your journey and track your progress.</p>
+                    
+                    <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Stat Cards will be rendered here by JS --></div>
+                </section>
+
+                <!-- My Courses: In Progress Section (Grid of Course Cards) --><section class="mb-12">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-lucide="book-open-text" class="w-6 h-6 mr-2 text-knowsta-500"></i>
+                        Courses In Progress
+                    </h2>
+                    <div id="in-progress-courses" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Course cards will be rendered here by JS --></div>
+                </section>
+
+                <!-- Recommended Courses Section --><section class="mb-12">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-lucide="lightbulb" class="w-6 h-6 mr-2 text-knowsta-500"></i>
+                        Recommended For You
+                    </h2>
+                    <div id="recommended-courses" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Recommended course cards will be rendered here by JS --></div>
+                </section>
+            </div>
+
+            <!-- Logged Out Message --><div id="logged-out-view" class="hidden pt-12 text-center">
+                <div class="max-w-xl mx-auto p-10 bg-white rounded-xl shadow-lg border border-gray-100">
+                    <i data-lucide="sparkles" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Unlock Your Learning Journey</h2>
+                    <p class="text-gray-500 mb-6">Sign in to access your courses, track progress, and earn certificates.</p>
+                    <button onclick="signInWithGoogle()" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-knowsta-500 focus:ring-offset-2 transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        <i data-lucide="log-in" class="w-5 h-5 mr-3 text-knowsta-500"></i>
+                        Sign In
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Simple Mock Modal for Actions --><div id="mock-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-10 backdrop-blur-sm" onclick="closeModal()">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transform modal-animated-content" onclick="event.stopPropagation()">
+            <div class="flex items-center mb-4">
+                <div id="modal-spinner" class="mr-3 hidden">
+                    <svg class="animate-spin h-6 w-6 text-knowsta-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <i id="modal-icon" data-lucide="check-circle" class="w-6 h-6 text-knowsta-500 mr-3"></i>
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800">Action Complete</h3>
+            </div>
+            <p id="modal-message" class="text-gray-600 mb-6 text-sm"></p>
+            <button onclick="closeModal()" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium transform hover:-translate-y-0.5 active:translate-y-0.5">Got It</button>
+        </div>
+    </div>
+
+    <!-- Hidden element for clipboard copy (Crucial for `document.execCommand`) --><textarea id="clipboard-helper" style="position:absolute; left:-9999px;"></textarea>
+
+    <!-- JavaScript for Supabase Setup, Auth, Mock Data, Rendering, and Interactivity --><script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        // NOTE: Since this environment does not provide Supabase global variables, 
+        // we use placeholders. In a real application, replace these:
+        const SUPABASE_URL = 'https://mock.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'mock-anon-key-for-canvas';
+        
+        let supabase = null;
+        let currentUser = null; // Stores the current Supabase User object
+        let isLoading = true;
+
+        // Colors for instructor avatars
+        const instructorAvatarColors = [
+            'bg-instructor-blue', 'bg-instructor-green', 'bg-instructor-red', 
+            'bg-instructor-purple', 'bg-instructor-yellow', 'bg-instructor-teal'
+        ];
+
+        // Mock User Data Structure
+        const mockUserData = {
+            stats: [
+                { title: "Courses Started", value: 7, icon: "graduation-cap", color: "text-blue-500" },
+                { title: "Certificates Earned", value: 3, icon: "award", color: "text-green-500" },
+                { title: "Hours Spent (Total)", value: 42.5, icon: "clock", color: "text-orange-500" },
+            ],
+            inProgressCourses: [
+                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design' },
+                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python' },
+                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance' },
+            ],
+            recommendedCourses: [
+                { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React' },
+                { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud' },
+                { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business' },
+                { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing' },
+            ]
+        };
+
+        // --- Core Authentication Functions (Supabase) ---
+
+        /**
+         * Initializes Supabase client and sets up the authentication listener.
+         */
+        async function setupSupabase() {
+            try {
+                // 1. Initialize Supabase Client
+                supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // 2. Listen for authentication state changes
+                supabase.auth.onAuthStateChange((event, session) => {
+                    currentUser = session ? session.user : null;
+                    isLoading = false;
+                    renderDashboard(); // Re-render the UI based on the new user state
+                    hideLoadingOverlay();
+                    
+                    if (event === 'SIGNED_IN') {
+                        showModal("Welcome!", "You are now signed in to Knowsta Learn.", "check-circle");
+                    }
+                });
+                
+                // 3. Check for initial session immediately
+                const { data: { session } = {} } = await supabase.auth.getSession(); // Destructure with default empty object
+                currentUser = session ? session.user : null;
+                
+                // If the listener hasn't fired yet and we know the state:
+                if (isLoading) {
+                    isLoading = false;
+                    renderDashboard();
+                    hideLoadingOverlay();
+                }
+
+            } catch (error) {
+                console.error("Supabase setup failed:", error);
+                isLoading = false;
+                renderDashboard();
+                hideLoadingOverlay();
+                showModal("Setup Error", "Failed to initialize Supabase. Check the URL and Key placeholders.", "x");
+            }
+        }
+
+        /**
+         * Initiates Google Sign-In using Supabase's OAuth method.
+         */
+        window.signInWithGoogle = async function() {
+            try {
+                // Show spinner in modal while authenticating
+                showModal("Signing In...", "Please wait while we securely sign you in...", "loader-2", true);
+
+                // Supabase signInWithOAuth for Google
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        // Redirect to the current page after successful sign-in
+                        redirectTo: window.location.origin + window.location.pathname, 
+                        // Set the OAuth flow to 'pkce' for security
+                        queryParams: {
+                            access_type: 'offline', 
+                            prompt: 'consent',
+                        }
+                    },
+                });
+
+                if (error) {
+                    showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
+                    throw error;
+                }
+                // The onAuthStateChange listener will handle the UI update after sign-in.
+            } catch (error) {
+                console.error("Google Sign-In failed:", error.message);
+                if (!document.getElementById('mock-modal').classList.contains('flex')) { // Only show if modal isn't already open
+                     showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
+                }
+            } finally {
+                hideSpinner(); // Ensure spinner is hidden regardless of outcome
+            }
+        }
+
+        /**
+         * Signs out the current user via Supabase.
+         */
+        window.signOutUser = async function() {
+            try {
+                showModal("Signing Out...", "Please wait while we log you out...", "loader-2", true); // Show spinner
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
+                    throw error;
+                }
+                // The onAuthStateChange listener handles the UI update
+                showModal("Signed Out", "You have been signed out. Come back soon!", "log-out");
+            } catch (error) {
+                console.error("Sign-out failed:", error);
+                 if (!document.getElementById('mock-modal').classList.contains('flex')) { 
+                    showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
+                }
+            } finally {
+                hideSpinner();
+            }
+        }
+        
+        // --- Utility Functions ---
+
+        /**
+         * Closes the mock modal.
+         */
+        window.closeModal = function() {
+            const modal = document.getElementById('mock-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            hideSpinner(); // Always hide spinner when closing modal
+        }
+
+        /**
+         * Shows the mock modal with a specific title, message, and icon.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message content of the modal.
+         * @param {string} icon - The Lucide icon name (e.g., 'check-circle').
+         * @param {boolean} showSpinner - Whether to show a spinner instead of the icon initially.
+         */
+        function showModal(title, message, icon, showSpinner = false) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            
+            const modalIcon = document.getElementById('modal-icon');
+            const modalSpinner = document.getElementById('modal-spinner');
+
+            if (showSpinner) {
+                modalIcon.classList.add('hidden');
+                modalSpinner.classList.remove('hidden');
+            } else {
+                modalIcon.classList.remove('hidden');
+                modalSpinner.classList.add('hidden');
+                modalIcon.setAttribute('data-lucide', icon || 'check-circle');
+            }
+            
+            // Re-render icons if needed
+            if (window.lucide) lucide.createIcons();
+            
+            document.getElementById('mock-modal').classList.remove('hidden');
+            document.getElementById('mock-modal').classList.add('flex');
+        }
+
+        /**
+         * Hides the modal spinner.
+         */
+        function hideSpinner() {
+            document.getElementById('modal-spinner').classList.add('hidden');
+            document.getElementById('modal-icon').classList.remove('hidden'); // Ensure icon placeholder is visible
+        }
+
+        /**
+         * Copies text to the clipboard and shows a confirmation modal.
+         */
+        window.copyToClipboard = function(textToCopy, courseId) {
+            const textarea = document.getElementById('clipboard-helper');
+            textarea.value = textToCopy;
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                showModal("Link Copied!", `The share link for Course ID ${courseId} has been copied to your clipboard. Share your progress!`, "copy");
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+                showModal("Copy Failed", "Could not automatically copy the link. Please try again.", "alert-circle");
+            }
+        }
+
+        /**
+         * Simulates starting a course.
+         */
+        window.startCourse = function(courseId, courseTitle) {
+            showModal("Course Started!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
+        }
+
+        /**
+         * Hides the initial loading overlay and shows the main app content.
+         */
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const app = document.getElementById('app');
+            loadingOverlay.style.opacity = '0';
+            app.style.opacity = '1';
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+            }, 300);
+        }
+        
+        // --- Rendering Functions ---
+
+        /**
+         * Renders the authentication section in the header.
+         */
+        function renderAuthSection() {
+            const authSection = document.getElementById('auth-section');
+            let content = '';
+            
+            // Supabase user check (currentUser will be null if signed out)
+            if (currentUser) {
+                // Logged In: Show profile initials and Sign Out button
+                // Supabase user metadata may contain user_metadata.full_name or email
+                const displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Learner';
+                const initials = (displayName.match(/\b\w/g) || []).join('').toUpperCase() || 'L';
+                
+                content = `
+                    <button class="text-gray-500 hover:text-knowsta-500 p-2 rounded-full transition-colors hidden sm:block" title="Search">
+                         <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                    <!-- User Profile Dropdown Mock --><button onclick="signOutUser()" class="flex items-center space-x-2 bg-knowsta-50 hover:bg-red-500 group rounded-full p-1.5 transition-colors duration-200 transform hover:-translate-y-0.5 active:translate-y-0.5" title="Sign Out">
+                        <span class="h-8 w-8 rounded-full bg-knowsta-500 group-hover:bg-red-600 flex items-center justify-center text-white font-semibold text-sm transition-colors">${initials}</span>
+                        <span class="hidden sm:inline text-sm font-medium text-gray-700 group-hover:text-white transition-colors">Sign Out</span>
+                        <i data-lucide="log-out" class="w-4 h-4 text-gray-600 group-hover:text-white mr-1 hidden sm:inline"></i>
+                    </button>
+                `;
+
+                // Update Welcome Header
+                document.getElementById('welcome-header').textContent = `Welcome Back, ${displayName.split(' ')[0]}!`;
+
+            } else {
+                // Logged Out: Show Sign In button
+                content = `
+                    <button onclick="signInWithGoogle()" class="inline-flex items-center text-sm font-medium text-knowsta-500 hover:bg-knowsta-50 py-2 px-3 rounded-lg transition-colors border border-knowsta-500/20 hover:shadow-md transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                        Sign In
+                    </button>
+                `;
+
+                // Reset Welcome Header 
+                 document.getElementById('welcome-header').textContent = `Welcome Back!`;
+            }
+
+            authSection.innerHTML = content;
+        }
+
+        /**
+         * Generates the HTML string for a single statistic card.
+         */
+        function createStatCard(stat, index) {
+            return `
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-4 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-slide-fade-in" style="animation-delay: ${index * 0.1}s;">
+                    <div class="p-3 rounded-full bg-knowsta-50 ${stat.color} bg-opacity-20">
+                        <i data-lucide="${stat.icon}" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">${stat.title}</p>
+                        <p class="text-3xl font-bold text-gray-800">${stat.value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Generates the HTML string for a single course card.
+         */
+        function createCourseCard(course, isInProgress, index) {
+            const progress = course.progress;
+            const progressColor = progress >= 75 ? 'bg-green-500' : progress >= 40 ? 'bg-knowsta-500' : 'bg-orange-500';
+            
+            const instructorInitials = (course.instructor.match(/\b\w/g) || []).join('');
+            const randomColorClass = instructorAvatarColors[Math.floor(Math.random() * instructorAvatarColors.length)];
+
+            const instructorDisplay = `
+                <div class="flex items-center space-x-2 text-sm text-gray-500 mb-3 flex-grow">
+                    <!-- Instructor Mock Avatar (New Improvement) --><div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold ${randomColorClass} bg-opacity-80 border border-white shadow-sm">
+                        ${instructorInitials}
+                    </div>
+                    <span>${course.instructor}</span>
+                </div>
+            `;
+            
+            const buttonAction = isInProgress 
+                ? `<button onclick="copyToClipboard('https://knowsta.learn/course/${course.id}', ${course.id})" class="text-sm font-medium text-knowsta-500 hover:text-knowsta-600 transition-colors flex items-center transform hover:-translate-y-0.5 active:translate-y-0.5">
+                      <i data-lucide="share-2" class="icon-small mr-1"></i> Share Progress
+                   </button>`
+                : `<button onclick="startCourse(${course.id}, '${course.title}')" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium text-sm transform hover:-translate-y-0.5 active:translate-y-0.5">
+                      Enroll for Free
+                   </button>`;
+
+            const progressDisplay = isInProgress && progress > 0 
+                ? `
+                    <div class="mt-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-medium text-gray-600">Progress</span>
+                            <span class="text-xs font-semibold ${progressColor}">${progress}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar-fill h-2 rounded-full ${progressColor}" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                  `
+                : `<div class="mt-4 h-9"></div>`; // Placeholder for consistent height
+
+            return `
+                <div class="bg-white shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer flex flex-col animate-slide-fade-in" style="animation-delay: ${index * 0.08}s;">
+                    <div class="h-40 bg-gray-100 overflow-hidden">
+                        <img src="${course.image}" alt="${course.title}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <span class="text-xs font-semibold uppercase text-knowsta-500 mb-1">${course.category}</span>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">${course.title}</h3>
+                        ${instructorDisplay}
+                        
+                        ${progressDisplay}
+
+                        <div class="mt-4 border-t pt-4">
+                            ${buttonAction}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Main function to render the entire dashboard based on auth state.
+         */
+        function renderDashboard() {
+            renderAuthSection();
+            const dashboardContent = document.getElementById('dashboard-content');
+            const loggedOutView = document.getElementById('logged-out-view');
+
+            // Check if user is logged in
+            if (currentUser) {
+                 // Logged In: Show Dashboard
+                dashboardContent.classList.remove('hidden');
+                
+                // Trigger transition effect by ensuring element is visible and then removing opacity-0
+                // Use a slight delay to ensure the display change takes effect
+                setTimeout(() => {
+                    dashboardContent.classList.remove('opacity-0');
+                }, 10); 
+                
+                loggedOutView.classList.add('hidden');
+                
+                const statsContainer = document.getElementById('stats-container');
+                statsContainer.innerHTML = mockUserData.stats.map(createStatCard).join('');
+
+                const inProgressContainer = document.getElementById('in-progress-courses');
+                inProgressContainer.innerHTML = mockUserData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
+
+                const recommendedContainer = document.getElementById('recommended-courses');
+                recommendedContainer.innerHTML = mockUserData.recommendedCourses.map((course, index) => createCourseCard(course, false, index)).join('');
+
+            } else {
+                // Logged Out: Show CTA to sign in
+                dashboardContent.classList.add('hidden');
+                dashboardContent.classList.add('opacity-0'); // Ensure it starts faded out for next login
+                loggedOutView.classList.remove('hidden');
+            }
+            
+            // Re-initialize Lucide Icons after content is rendered
+            lucide.createIcons();
+        }
+
+        // Initialize the application when the window loads
+        window.onload = setupSupabase;
+
+    </script>
+</body>
+</html>
