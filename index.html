@@ -3,1749 +3,834 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knowsta</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="./favicon.ico" />
+    <title>Knowsta Learn Dashboard</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for professional look --><script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- SEO and Open Graph Tags -->
-    <meta name="description" content="Knowsta AI: The smart conversational assistant powered by Gemini. Fast, accurate, and multilingual chat."/>
-    <meta property="og:title" content="Knowsta AI Assistant"/>
-    <meta property="og:description" content="The fast, modern, and multilingual AI chat app powered by Google Gemini."/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:image" content="https://placehold.co/1200x630/004aad/ffffff?text=Knowsta+AI"/>
-    <meta property="og:url" content="[Your App URL]"/> 
-
-    <!-- Tone.js for synthesized sound effects (no external files needed) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/tone.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Base Styles and Layout (Dual Panel) */
+        /* Configure the Inter font and a light background for the clean aesthetic */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5; 
-            transition: background-color 0.3s;
+            background-color: #f7f9fc; /* Very light, clean background */
+            overflow-x: hidden; /* Prevent horizontal scroll due to animations */
         }
-        .app-container {
-            max-width: 1400px; /* Wider for web */
-            height: 95vh;
-            margin: 2.5vh auto;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            display: flex;
-            background-color: white;
-            transition: background-color 0.3s, box-shadow 0.3s;
+        /* Custom Tailwind config for the primary brand color and font */
+        .logo-font {
+            font-weight: 800; 
+            letter-spacing: -0.05em;
         }
-        
-        /* Sidebar Styles (Desktop Only) */
-        .sidebar {
-            width: 280px;
-            min-width: 280px;
-            background-color: #f7fafc;
-            border-right: 1px solid #e2e8f0;
-            display: flex; /* Always visible on desktop */
-            flex-direction: column;
-            transition: all 0.3s;
+        /* Progress bar fill transition for smooth animation */
+        .progress-bar-fill {
+            transition: width 0.7s ease-out; /* Slower, smoother transition */
         }
-        
-        /* Main Chat Panel */
-        .main-chat-panel {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+        .icon-small {
+            width: 1rem;
+            height: 1rem;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .loading-screen {
+            transition: opacity 0.3s ease-in-out;
         }
 
-        /* Mobile Layout */
-        @media (max-width: 768px) {
-            .app-container {
-                height: 100vh;
-                margin: 0;
-                border-radius: 0;
-            }
-            .sidebar {
-                /* Hide sidebar on small screens, will be toggleable if needed */
-                display: none; 
-            }
-            /* Adjust main chat panel to take full width */
-            .main-chat-panel {
-                width: 100%;
-            }
+        /* Keyframes for modal entry animation */
+        @keyframes modal-fade-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
-        
-        /* Chat Bubbles */
-        .chat-bubble-user {
-            background-color: #007aff; 
-            color: white;
-            border-radius: 18px 18px 2px 18px;
-            padding: 10px 14px;
-            max-width: 90%; 
-        }
-        .chat-bubble-ai {
-            background-color: #e5e5ea; 
-            color: #1c1c1e;
-            border-radius: 18px 18px 18px 2px;
-            padding: 10px 14px;
-            max-width: 90%;
+        .modal-animated-content {
+            animation: modal-fade-in 0.3s ease-out forwards;
         }
 
-        /* Input Bar (Gemini/ChatGPT style) */
-        .input-bar-wrapper {
-            transition: box-shadow 0.2s, background-color 0.3s;
-            box-shadow: 0 0 0 1px #e2e8f0, 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        /* Keyframes for staggered entry animation */
+        @keyframes slide-fade-in {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* Increased focus clarity - using new primary color */
-        .input-bar-wrapper:focus-within {
-            box-shadow: 0 0 0 1px #004aad, 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(0, 74, 173, 0.3);
-        }
-        
-        /* --- PRELOADER STYLES (FIXED COLORING) --- */
-        #preloader {
-            background-color: #f0f2f5; /* Light mode default */
-        }
-        .dark #preloader {
-            background-color: #1c1c1e; /* Dark mode background */
-        }
-        .dark #preloader .loading-dots span {
-            background-color: #004aad; /* Darkened primary color */
-        }
-        .loading-dots span {
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0s; }
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
+        .animate-slide-fade-in {
+            animation: slide-fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Ease-out quad */
+            opacity: 0; /* Initial state before animation */
         }
 
-        /* --- DARK MODE STYLES --- */
-        .dark body { background-color: #1c1c1e; }
-        .dark .app-container { background-color: #2c2c2e; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
-        /* Refined dark sidebar color for better contrast */
-        .dark .sidebar { background-color: #1f1f1f; border-right: 1px solid #3a3a3c; color: white; }
-        .dark .chat-bubble-ai { background-color: #48484a; color: white; }
-        /* FIX: Ensure user input text is clearly visible */
-        .dark #user-input { color: white; }
-        .dark .input-bar-wrapper { background-color: #3a3a3c; border-color: #48484a; }
-        .dark .input-bar-wrapper:focus-within {
-            box-shadow: 0 0 0 1px #004aad, 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(0, 74, 173, 0.3);
+        /* Override default lucide icon size for consistency */
+        i[data-lucide] {
+            stroke-width: 2.2; /* Make icons slightly bolder */
         }
-        .dark header { background-color: rgba(44, 44, 46, 0.9); border-color: #3a3a3c; }
-        .dark .topic-item { background-color: #3a3a3c; color: #e5e5ea; }
-        /* Sidebar text readability fix */
-        .dark .sidebar .text-gray-700 { color: #f0f2f5; }
-        .dark .sidebar .text-gray-300 { color: #a2a2a7; }
-        .dark .sidebar .animated-button { color: #f0f2f5; } /* Ensures buttons are visible */
-        .dark .sidebar .hover\\:bg-gray-200:hover { background-color: #3a3a3c; }
 
-
-        /* Scrollbar and Animations remain the same */
-        #chat-window::-webkit-scrollbar { width: 6px; }
-        #chat-window::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        .animated-button:active { transform: scale(0.95); }
-
-        /* FIX: Ensure typed text is visible in light mode input */
-        #user-input { color: #1c1c1e; }
-        
-        /* Timestamps (Small and subtle) */
-        .timestamp {
-            font-size: 0.6rem;
-            opacity: 0.6;
-            margin-top: 2px;
-            user-select: none;
+        .nav-active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 4px;
         }
-        .user-message-wrapper .timestamp {
-            margin-right: 16px;
-        }
-        .ai-message-wrapper .timestamp {
-            margin-left: 16px;
-        }
-        
-        /* FIX: Logo color in light mode header */
-        .main-chat-panel header h1 {
-            color: #004aad; /* New primary color */
-        }
-        .dark .main-chat-panel header h1 {
-            color: white; 
-        }
-        
-        /* Button primary color update */
-        #new-chat-button, #send-button, #auth-button.bg-indigo-600, 
-        #settings-modal .bg-indigo-600, #about-modal .bg-indigo-600, #profile-modal .bg-indigo-600 {
-            background-color: #004aad;
-        }
-        #new-chat-button:hover, #send-button:hover, #auth-button.bg-indigo-600:hover,
-        #settings-modal .bg-indigo-600:hover, #about-modal .bg-indigo-600:hover, #profile-modal .bg-indigo-600:hover {
-            background-color: #003a89;
-        }
-        
-        /* Message Controls (Edit/Regenerate/Delete/Copy/Listen) */
-        .message-controls { opacity: 0; transition: opacity 0.2s; }
-        .user-message-wrapper:hover .message-controls,
-        .ai-message-wrapper:hover .message-controls { opacity: 1; }
     </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        knowsta: {
+                            50: '#f0f3ff',
+                            100: '#d9e0ff',
+                            500: '#4f46e5', // Primary brand color (Indigo)
+                            600: '#4338ca',
+                        },
+                        // Custom colors for instructor avatars
+                        instructor: {
+                            blue: '#4f46e5',
+                            green: '#22c55e',
+                            red: '#ef4444',
+                            purple: '#a855f7',
+                            yellow: '#eab308',
+                            teal: '#14b8a6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="p-0 sm:p-4">
-    <!-- PRELOADER -->
-    <div id="preloader" class="fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-500">
+<body class="antialiased">
+
+    <!-- Loading Overlay (Initial state: displayed until auth checks complete) --><div id="loading-overlay" class="loading-screen fixed inset-0 z-[100] bg-white flex items-center justify-center">
         <div class="flex flex-col items-center">
-            <img src="https://i.ibb.co/hRdf1MRq/knowsta.png" alt="Knowsta Logo" class="w-12 h-12 mb-4 animate-bounce rounded-full">
-            <div class="loading-dots flex justify-center space-x-1">
-                <span class="w-3 h-3 bg-[#004aad] rounded-full"></span>
-                <span class="w-3 h-3 bg-[#004aad] rounded-full"></span>
-                <span class="w-3 h-3 bg-[#004aad] rounded-full"></span>
-            </div>
-            <p id="preloader-text" class="mt-4 text-gray-700 dark:text-gray-300">Loading Knowsta...</p>
+            <svg class="animate-spin h-10 w-10 text-knowsta-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600 font-medium">Loading Knowsta Learn...</p>
         </div>
     </div>
     
-    <div id="app" class="app-container opacity-0">
-
-        <!-- --- SIDEBAR (Desktop Navigation) --- -->
-        <div class="sidebar p-4 pt-6">
-            
-            <!-- Logo Only (Brand Identity) -->
-            <div class="flex items-center justify-center mb-6">
-                <img src="https://i.ibb.co/hRdf1MRq/knowsta.png" alt="Knowsta Logo" class="w-8 h-8 rounded-full">
-            </div>
-
-            <!-- New Chat Button -->
-            <button id="new-chat-button" onclick="startNewChat()" class="w-full py-2 px-3 text-base rounded-xl bg-indigo-600 text-white transition duration-150 hover:bg-indigo-700 animated-button shadow-md mb-6">
-                <div class="flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                    <span id="label-new-chat">New Chat</span>
-                </div>
-            </button>
-
-            <!-- Utility Buttons -->
-            <div class="space-y-3 flex-grow">
-                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Settings & Tools</div>
-
-                <!-- Settings Button (New Centralized Control) -->
-                <button id="settings-button" onclick="showSettingsModal()" class="w-full flex items-center p-2 rounded-xl text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 animated-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.942 3.31.82 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.942 1.543-.82 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.942-3.31-.82-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.942-1.543.82-3.31 2.37-2.37h.001c.43.723 1.055 1.096 1.761 1.096z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    <span id="label-settings">Settings</span>
-                </button>
-                
-                <!-- Export Button -->
-                <button id="export-button" onclick="exportChat()" class="w-full flex items-center p-2 rounded-xl text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 animated-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    <span id="label-export">Export Conversation (.txt)</span>
-                </button>
-            </div>
-
-            <!-- Profile and About Footer -->
-            <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                <button id="sidebar-auth-btn" onclick="handleAuthClickOrProfile()" class="w-full flex items-center p-2 rounded-xl text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 animated-button">
-                    <img id="user-avatar-sidebar" src="https://placehold.co/32x32/cccccc/ffffff?text=U" alt="User" class="w-8 h-8 rounded-full mr-3">
-                    <span id="sidebar-username">Sign In / Profile</span>
-                </button>
-                <button id="about-btn" onclick="showAboutModal()" class="w-full flex items-center p-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 animated-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span id="label-about">About Knowsta</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- --- MAIN CHAT PANEL --- -->
-        <div class="main-chat-panel">
-            
-            <!-- Header (Mobile/Web) -->
-            <header class="p-4 border-b border-gray-100 shadow-sm sticky top-0 z-10 flex items-center justify-between transition duration-300">
-                <!-- Brand Title (Visible on Mobile/Web) -->
-                <div class="flex items-center">
-                    <!-- FIX: Header text color uses primary color -->
-                    <h1 class="text-xl font-bold transition duration-300 text-[#004aad] dark:text-white">Knowsta</h1>
-                </div>
-                <!-- Mobile/Web Auth/Profile button -->
-                <div class="flex items-center space-x-3">
-                    <button id="auth-button" onclick="handleAuthClick()" class="py-1 px-3 text-sm rounded-full transition duration-150 animated-button">
-                        Initializing...
-                    </button>
-                    <img 
-                        id="user-avatar" 
-                        src="https://placehold.co/32x32/cccccc/ffffff?text=U" 
-                        alt="User Avatar" 
-                        class="w-8 h-8 rounded-full hidden cursor-pointer border-2 border-[#004aad] shadow-md transition duration-150 animated-button" 
-                        onclick="showProfileModal()">
-                </div>
-            </header>
-
-            <!-- Chat Window -->
-            <div id="chat-window" class="flex-grow p-4 space-y-4 overflow-y-auto">
-                <!-- Content will be injected here -->
-            </div>
-
-            <!-- Input Area -->
-            <div class="p-4 border-t border-gray-100 bg-white transition duration-300">
-                <!-- Loading Indicator -->
-                <div id="loading-indicator" class="hidden text-center text-sm text-[#004aad] mb-2">
-                    <div class="loading-dots flex justify-center space-x-1">
-                        <span class="w-2 h-2 bg-[#004aad] rounded-full"></span>
-                        <span class="w-2 h-2 bg-[#004aad] rounded-full"></span>
-                        <span class="w-2 h-2 bg-[#004aad] rounded-full"></span>
-                    </div>
-                    <p class="mt-1">Knowsta is thinking...</p>
-                </div>
-                
-                <!-- COHESIVE INPUT BAR -->
-                <div class="flex items-end gap-1 p-1 border border-gray-300 rounded-2xl input-bar-wrapper">
-                    
-                    <!-- Voice Input Button (Smaller, contained) -->
-                    <button
-                        id="mic-button"
-                        onclick="toggleVoiceInput()"
-                        class="p-2 text-gray-500 rounded-xl flex items-center justify-center hover:text-[#004aad] transition duration-150 dark:text-gray-300 dark:hover:text-white animated-button"
-                        title="Start Voice Input"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7v0a7 7 0 01-7-7v0M12 19v3M12 4v12M12 4a3 3 0 00-3 3v5a3 3 0 006 0V7a3 3 0 00-3-3z" />
-                        </svg>
-                    </button>
-
-                    <textarea
-                        id="user-input"
-                        rows="1"
-                        placeholder="Ask anything..."
-                        class="flex-grow p-1 bg-transparent resize-none focus:ring-0 focus:border-transparent outline-none transition duration-150 dark:text-white"
-                        oninput="autoExpand(this); validateInput()"
-                        onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"
-                    ></textarea>
-                    
-                    <!-- Send Button (Smaller, rounded, contained) -->
-                    <button
-                        id="send-button"
-                        onclick="sendMessage()"
-                        class="w-8 h-8 mr-1 my-0.5 bg-[#004aad] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#003a89] transition duration-150 disabled:opacity-30 disabled:shadow-none animated-button"
-                        disabled
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
+    <!-- The main application container --><div id="app" class="min-h-screen opacity-0 transition-opacity duration-300">
         
-    </div>
+        <!-- Header: Fixed Top Navigation Bar (Apple/Coursera style) --><header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <!-- Logo --><a href="#dashboard" onclick="navigateTo('dashboard')" class="flex items-center space-x-2">
+                    <span class="text-3xl font-extrabold text-knowsta-500 logo-font">Knowsta</span>
+                    <span class="hidden sm:inline text-xl text-gray-500">Learn</span>
+                </a>
 
-    <!-- Settings Modal (NEW) -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4 transition duration-300">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-md transition duration-300 transform scale-100 dark:text-white">
-            <h2 class="text-2xl font-bold mb-6 text-center text-[#004aad]">App Settings</h2>
+                <!-- Navigation/Search (Hidden on smaller screens) --><nav class="hidden md:flex flex-1 mx-8 items-center justify-center space-x-8 text-sm font-medium text-gray-600">
+                    <a id="nav-dashboard" href="#dashboard" onclick="navigateTo('dashboard')" class="nav-link hover:text-knowsta-500 transition duration-150">My Learning</a>
+                    <a id="nav-catalog" href="#catalog" onclick="navigateTo('catalog')" class="nav-link hover:text-knowsta-500 transition duration-150">Catalog</a>
+                    <a id="nav-settings" href="#settings" onclick="navigateTo('settings')" class="nav-link hover:text-knowsta-500 transition duration-150">Account Settings</a>
+                    <a id="nav-about" href="#about" onclick="navigateTo('about')" class="nav-link hover:text-knowsta-500 transition duration-150">About Knowsta</a>
+                </nav>
 
-            <!-- Theme Control -->
-            <div class="mb-6 pb-4 border-b dark:border-gray-700">
-                <p class="text-lg font-semibold mb-2">Appearance</p>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Current Theme: <span id="current-theme-label" class="font-medium">Light</span></span>
-                    <button onclick="toggleTheme()" class="py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 animated-button">
-                        Toggle Light/Dark
+                <!-- Right side: Auth and Profile (Dynamic) --><div id="auth-section" class="flex items-center space-x-4">
+                    <!-- Content will be rendered by JS based on login state --></div>
+            </div>
+        </header>
+
+        <!-- Main Content Area --><main class="pt-24 p-4 md:p-8 max-w-7xl mx-auto" id="main-content">
+            
+            <!-- VIEW: Dashboard / My Learning (Default Authenticated View) --><div id="dashboard-view" class="app-view opacity-0 transition-opacity duration-500">
+                <!-- Welcome & Key Stats Section (High-level data, clean cards) --><section class="mb-8">
+                    <!-- Greeting is now dynamic, updated in JS --><h1 id="welcome-header" class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Welcome!</h1>
+                    <!-- Subtitle is now dynamic, updated in JS --><p id="welcome-subtitle" class="text-gray-500 mb-6">Continue your journey and track your progress.</p>
+                    
+                    <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Stat Cards will be rendered here by JS --></div>
+                </section>
+
+                <!-- My Courses: In Progress Section (Grid of Course Cards) --><section class="mb-12">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-lucide="book-open-text" class="w-6 h-6 mr-2 text-knowsta-500"></i>
+                        Courses In Progress
+                    </h2>
+                    <div id="in-progress-courses" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Course cards will be rendered here by JS --></div>
+                </section>
+
+                <!-- Recommended Courses Section --><section class="mb-12">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-lucide="lightbulb" class="w-6 h-6 mr-2 text-knowsta-500"></i>
+                        Recommended For You
+                    </h2>
+                    <div id="recommended-courses" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Recommended course cards will be rendered here by JS --></div>
+                </section>
+            </div>
+            
+            <!-- VIEW: Account Settings --><div id="settings-view" class="app-view hidden opacity-0 transition-opacity duration-500">
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">Account Settings</h1>
+                    <p class="text-gray-500 mb-8">Manage your profile, preferences, and security settings.</p>
+
+                    <!-- Profile Card -->
+                    <div class="mb-8 border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i data-lucide="user" class="w-5 h-5 mr-2 text-knowsta-500"></i> Profile Information
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Name (Read-only from Supabase Auth) -->
+                            <div>
+                                <label for="profile-name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input id="profile-name" type="text" disabled class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-500 cursor-not-allowed text-sm">
+                            </div>
+                            
+                            <!-- Bio (Editable) -->
+                            <div>
+                                <label for="profile-bio" class="block text-sm font-medium text-gray-700">Bio (Max 150 characters)</label>
+                                <textarea id="profile-bio" rows="3" maxlength="150" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-knowsta-500 focus:ring-knowsta-500 px-4 py-2 text-sm" placeholder="Tell us a little about your learning goals..."></textarea>
+                            </div>
+
+                            <!-- Location (Editable) -->
+                            <div>
+                                <label for="profile-location" class="block text-sm font-medium text-gray-700">Location</label>
+                                <input id="profile-location" type="text" class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-knowsta-500 focus:ring-knowsta-500 px-4 py-2 text-sm" placeholder="e.g., London, UK">
+                            </div>
+                            
+                            <button onclick="updateUserProfile()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-knowsta-500 transform hover:-translate-y-0.5 active:translate-y-0.5">
+                                <i data-lucide="save" class="w-4 h-4 mr-2"></i> Save Profile
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Persistence Note -->
+                    <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-lg">
+                        <p class="text-sm font-medium">Data Persistence Note:</p>
+                        <p class="text-xs">To make these changes permanent across sessions, you must set up and reference a **Supabase Table** (e.g., `user_profiles`) in the `updateUserProfile` function in the JavaScript code below.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Catalog (Placeholder) --><div id="catalog-view" class="app-view hidden pt-12 text-center opacity-0 transition-opacity duration-500">
+                <div class="max-w-xl mx-auto p-10 bg-white rounded-xl shadow-lg border border-gray-100">
+                    <i data-lucide="search-check" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">The Full Catalog is Coming Soon!</h2>
+                    <p class="text-gray-500 mb-6">Explore hundreds of courses in tech, business, and art.</p>
+                    <button onclick="navigateTo('dashboard')" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg shadow-sm text-white bg-knowsta-500 hover:bg-knowsta-600 transition-colors transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        Back to My Learning
                     </button>
                 </div>
             </div>
 
-            <!-- Language Control -->
-            <div class="mb-6 pb-4 border-b dark:border-gray-700">
-                <p class="text-lg font-semibold mb-2">Response Language</p>
-                <select id="modal-lang-selector" class="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white" onchange="updateLanguageFromModal()">
-                    <option value="English">English</option>
-                    <option value="Spanish">Español (ES)</option>
-                    <option value="French">Français (FR)</option>
-                    <option value="German">Deutsch (DE)</option>
-                    <option value="Japanese">日本語 (JP)</option>
-                    <option value="Chinese">中文 (ZH)</option>
-                    <option value="Korean">한국어 (KO)</option>
-                    <option value="Russian">Русский (RU)</option>
-                    <option value="Arabic">العربية (AR)</option>
-                    <option value="Vietnamese">Tiếng Việt (VI)</option>
-                    <option value="Italian">Italiano (IT)</option>
-                    <option value="Portuguese">Português (PT)</option>
-                    <option value="Hindi">हिन्दी (HI)</option>
-                </select>
-            </div>
+            <!-- VIEW: About Knowsta Learn --><div id="about-view" class="app-view hidden opacity-0 transition-opacity duration-500">
+                <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-4">About Knowsta Learn</h1>
+                    <p class="text-lg text-gray-600 mb-8">
+                        Our mission is to democratize high-quality, professional education. We partner with top universities and industry leaders to bring accessible, job-relevant skills to learners worldwide.
+                    </p>
 
-            <!-- AI Tone Control -->
-            <div class="mb-6">
-                <p class="text-lg font-semibold mb-2">AI Personality Tone</p>
-                <select id="modal-tone-selector" class="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white" onchange="updateToneFromModal()">
-                    <option value="Friendly">Friendly (Default)</option>
-                    <option value="Professional">Professional (Formal, Concise)</option>
-                    <option value="Creative">Creative (Imaginative, Vivid)</option>
-                    <option value="Neutral">Neutral (Objective, Direct)</option>
-                </select>
-            </div>
-
-            <div class="mt-6 text-center">
-                <button onclick="hideSettingsModal()" class="py-2 px-6 bg-[#004aad] text-white rounded-xl shadow-md hover:bg-[#003a89] transition duration-150 animated-button">
-                    Close Settings
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- About Modal -->
-    <div id="about-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4 transition duration-300">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-sm transition duration-300 transform scale-100 dark:text-white">
-            <h2 class="text-2xl font-bold mb-4 text-center text-[#004aad]">Knowsta</h2>
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Knowsta is an intelligent conversational AI assistant designed for seamless, contextual interaction. It is powered by the advanced **Gemini 2.5 Flash** model, ensuring fast, relevant, and well-structured answers.
-            </p>
-            
-            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Developed by:</strong> <a href="https://github.com/MrSTNyein" target="_blank" class="text-[#004aad] hover:text-[#003a89]">Sithu Nyein</a>
-                </p>
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Authentication provided by:</strong> Supabase
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 pt-2">
-                    Core AI is powered by Gemini 2.5 Flash.
-                </p>
-            </div>
-
-            <div class="mt-6 text-center">
-                <button onclick="hideAboutModal()" class="py-2 px-6 bg-[#004aad] text-white rounded-xl shadow-md hover:bg-[#003a89] transition duration-150 animated-button">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Profile Modal (Used as Auth/Profile View) -->
-    <div id="profile-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4 transition duration-300">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-sm transition duration-300 transform scale-100 dark:text-white">
-            <h2 class="text-2xl font-bold mb-4 text-center text-[#004aad]">User Profile / Sign In</h2>
-            
-            <!-- Auth/Profile Content -->
-            <div id="profile-content" class="flex flex-col items-center space-y-4">
-                <img id="profile-avatar-img" src="https://placehold.co/80x80/cccccc/ffffff?text=U" alt="Profile Avatar" class="w-20 h-20 rounded-full border-4 border-[#004aad]">
-                
-                <!-- Display Name -->
-                <div class="w-full space-y-1">
-                    <label for="profile-name-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
-                    <input type="text" id="profile-name-input" readonly class="w-full p-2 border border-gray-300 rounded-xl focus:ring-[#004aad] focus:border-[#004aad] dark:bg-gray-700 dark:border-gray-600" oninput="saveProfileCustomization()">
-                    <p id="profile-id-text" class="text-xs text-gray-500 dark:text-gray-400 break-all pt-1">ID: </p>
+                    <div class="grid md:grid-cols-3 gap-6 text-left">
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="target" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Mission-Driven</h3>
+                            <p class="text-sm text-gray-600">Empowering individuals through transformative learning experiences that drive career growth.</p>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="infinity" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Flexible Learning</h3>
+                            <p class="text-sm text-gray-600">Learn at your own pace, on your own schedule. Access courses anytime, anywhere, on any device.</p>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <i data-lucide="award" class="w-6 h-6 text-knowsta-500 mb-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-800">Certified Excellence</h3>
+                            <p class="text-sm text-gray-600">Earn recognized certifications and Specializations that validate your new skills to employers.</p>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Profile Customization -->
-                <div class="w-full space-y-2">
-                    <label for="profile-bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio / About Me (Local Storage)</label>
-                    <textarea id="profile-bio" oninput="saveProfileCustomization()" placeholder="Tell people about yourself..." rows="3" class="w-full p-2 border border-gray-300 rounded-xl focus:ring-[#004aad] focus:border-[#004aad] dark:bg-gray-700 dark:border-gray-600"></textarea>
-                </div>
-                
-                <!-- Save Button (Placeholder for metadata update, currently just saves bio) -->
-                <button 
-                    onclick="saveProfileCustomization(); alert('Profile saved locally! (Name change requires Supabase update and only works for Email users.)')" 
-                    class="w-full py-2 px-4 bg-[#004aad] text-white rounded-xl shadow-md hover:bg-[#003a89] transition duration-150 animated-button"
-                >
-                    Save Changes
-                </button>
-                
-                <!-- Sign In/Out Buttons -->
-                <button 
-                    id="profile-auth-button"
-                    onclick="handleAuthClick(); hideProfileModal();" 
-                    class="w-full py-2 px-4 bg-red-600 text-white rounded-xl shadow-md hover:bg-red-700 transition duration-150 animated-button"
-                >
-                    Sign Out
-                </button>
-
-                <!-- Email/Password Auth Form (for demonstration in modal) -->
-                <div class="w-full space-y-3 pt-4 border-t dark:border-gray-700 hidden" id="auth-form-container">
-                    <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">Sign In / Register</p>
-                    <input type="email" id="modal-email-input" placeholder="Email" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#004aad] focus:border-[#004aad] dark:bg-gray-700 dark:border-gray-600">
-                    <input type="password" id="modal-password-input" placeholder="Password (min 6 characters)" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#004aad] focus:border-[#004aad] dark:bg-gray-700 dark:border-gray-600">
-                    <button id="modal-email-auth-button" onclick="handleModalEmailAuth()" class="w-full py-3 px-4 bg-gray-700 text-white font-semibold rounded-xl hover:bg-gray-800 animated-button dark:bg-gray-600 dark:hover:bg-gray-700">
-                        Submit
+            <!-- Logged Out Message --><div id="logged-out-view" class="hidden pt-12 text-center">
+                <div class="max-w-xl mx-auto p-10 bg-white rounded-xl shadow-lg border border-gray-100">
+                    <i data-lucide="sparkles" class="w-12 h-12 text-knowsta-500 mx-auto mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Unlock Your Learning Journey</h2>
+                    <p class="text-gray-500 mb-6">Sign in to access your courses, track progress, and earn certificates.</p>
+                    
+                    <button onclick="signInWithGoogle()" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-knowsta-500 focus:ring-offset-2 transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        <i data-lucide="log-in" class="w-5 h-5 mr-3 text-knowsta-500"></i>
+                        Sign In
                     </button>
-                    <p id="modal-auth-message" class="text-sm text-center text-red-500 hidden"></p>
                 </div>
             </div>
-            
-            <button onclick="hideProfileModal()" class="w-full py-2 px-6 bg-[#004aad] text-white rounded-xl shadow-md hover:bg-[#003a89] transition duration-150 mt-4 animated-button">Close</button>
+
+        </main>
+    </div>
+
+    <!-- Simple Mock Modal for Actions --><div id="mock-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-10 backdrop-blur-sm" onclick="closeModal()">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transform modal-animated-content" onclick="event.stopPropagation()">
+            <div class="flex items-center mb-4">
+                <div id="modal-spinner" class="mr-3 hidden">
+                    <svg class="animate-spin h-6 w-6 text-knowsta-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <i id="modal-icon" data-lucide="check-circle" class="w-6 h-6 text-knowsta-500 mr-3"></i>
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800">Action Complete</h3>
+            </div>
+            <p id="modal-message" class="text-gray-600 mb-6 text-sm"></p>
+            <button onclick="closeModal()" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium transform hover:-translate-y-0.5 active:translate-y-0.5">Got It</button>
         </div>
+    </div>
 
+    <!-- Hidden element for clipboard copy (Crucial for `document.execCommand`) --><textarea id="clipboard-helper" style="position:absolute; left:-9999px;"></textarea>
 
-    <!-- Supabase & App Script -->
-    <script type="module">
-        // Import Supabase Client
+    <!-- JavaScript for Supabase Setup, Auth, Mock Data, Rendering, and Interactivity --><script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // --- GLOBAL CONFIGURATION ---
-        const SUPABASE_URL = 'https://nreviyisnhwckepaiglq.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZXZpeWlzbmh3Y2tlcGFpZ2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NjU0OTAsImV4cCI6MjA3NTM0MTQ5MH0.g3GRHAXq-_TcTqKubarOSO-pKyXj4VHko6x84ImC2kg';
+        // Supabase Keys
+        const SUPABASE_URL = 'https://txexfyeiarmkfxbjsifc.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4ZXhmeWVpYXJta2Z4YmpzaWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAxNzYsImV4cCI6MjA3NTUxNjE3Nn0.qAMIETftxjy2GFl_jqtqDucHgOTXOxRrlKQcLs8vwno';
         
-        const FLASH_MODEL = 'gemini-2.5-flash-preview-05-20';
-        // FIX: Setting API_KEY to empty string to force internal proxy and solve "User location is not supported"
-        const API_KEY = ""; 
-
-        const THEME_KEY = 'knowsta_theme';
-        const LANG_KEY = 'knowsta_lang';
-        const TONE_KEY = 'knowsta_tone'; 
-        const BIO_KEY = 'knowsta_bio'; 
+        let supabase = null;
+        let currentUser = null; // Stores the current Supabase User object
+        let isLoading = true;
+        let currentView = 'dashboard'; // Default view
         
-        // --- FIX: Dynamic key for persistent user data ---
-        function getChatHistoryKey(id) {
-            return `knowsta_chat_history_${id}`;
-        }
-        function getProfileBioKey(id) {
-            return `knowsta_bio_${id}`;
-        }
-
-        const MINIMUM_LOAD_MS = 3000; 
-
-        let chatHistory = [];
-        let userId = 'guest';
-        let supabase;
-        let speechRecognition;
-        let responseTone = 'Friendly';
-        let profileBio = '';
-
-
-        // --- UI REFERENCES ---
-        const appContainer = document.getElementById('app');
-        const preloader = document.getElementById('preloader');
-        const chatWindow = document.getElementById('chat-window');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const authButton = document.getElementById('auth-button');
-        const userAvatar = document.getElementById('user-avatar');
-        const themeIcon = document.getElementById('theme-icon-sidebar'); 
-        const aboutModal = document.getElementById('about-modal');
-        const settingsModal = document.getElementById('settings-modal'); 
-        const currentThemeLabel = document.getElementById('current-theme-label'); 
-        const modalLangSelector = document.getElementById('modal-lang-selector'); 
-        const modalToneSelector = document.getElementById('modal-tone-selector'); 
-        const micButton = document.getElementById('mic-button');
-        const profileModal = document.getElementById('profile-modal');
-        const profileAvatarImg = document.getElementById('profile-avatar-img');
-        const profileNameText = document.getElementById('profile-name-text');
-        const profileIdText = document.getElementById('profile-id-text');
-        const profileBioInput = document.getElementById('profile-bio');
-        const profileNameInput = document.getElementById('profile-name-input'); // NEW REFERENCE
-        const sidebarUsername = document.getElementById('sidebar-username');
-        const userAvatarSidebar = document.getElementById('user-avatar-sidebar');
-        const labelNewChat = document.getElementById('label-new-chat');
-        const labelSettings = document.getElementById('label-settings');
-        const labelExport = document.getElementById('label-export');
-        const labelAbout = document.getElementById('label-about');
-
-
-        // --- SOUND MANAGER (Tone.js) ---
-
-        let playSendSound = () => {};
-        let playReceiveSound = () => {};
-
-        if (window.Tone) {
-            const sendSynth = new Tone.Synth({
-                oscillator: { type: "square" },
-                envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
-            }).toDestination();
-
-            const receiveSynth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: { type: "sine" },
-                envelope: { attack: 0.05, decay: 0.2, sustain: 0.1, release: 0.5 }
-            }).toDestination();
-            
-            document.addEventListener('click', () => {
-                if (Tone.context.state !== 'running') {
-                    Tone.start().then(() => console.log("AudioContext started."));
-                }
-            }, { once: true });
-
-            window.playSendSound = () => { sendSynth.triggerAttackRelease("C5", "16n"); };
-            window.playReceiveSound = () => { receiveSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n"); };
-        } else {
-            console.warn("Tone.js not loaded. Sound effects disabled.");
-        }
-
-
-        // --- LOCALIZATION DATA (Unchanged) ---
-        const localizationData = {
-            'English': { 
-                'sidebar_username': 'Sign In / Profile', 'btn_new_chat': 'New Chat', 'btn_settings': 'Settings', 
-                'btn_export': 'Export Conversation (.txt)', 'btn_about': 'About Knowsta', 'btn_signin': 'Sign In',
-                'btn_signout': 'Sign Out', 'head_conversation': 'Knowsta', 
-                'head_settings': 'App Settings', 'theme_label': 'Current Theme:', 'theme_toggle': 'Toggle Light/Dark',
-                'lang_label': 'Response Language', 'tone_label': 'AI Personality Tone', 'close': 'Close', 'submit': 'Submit',
-                'user_name_default': 'User Name', 'profile_signin': 'User Profile / Sign In', 'welcome_head': 'How can I help you?', 
-                'welcome_sub': 'I\'m ready to assist you.', 
-                'welcome_text': 'Start by asking a factual question, requesting code, or a creative prompt.',
-                'placeholder': 'Ask anything...' 
-            },
-            'Spanish': {
-                'sidebar_username': 'Iniciar Sesión / Perfil', 'btn_new_chat': 'Nuevo Chat', 'btn_settings': 'Ajustes',
-                'btn_export': 'Exportar Conversación (.txt)', 'btn_about': 'Acerca de Knowsta', 'btn_signin': 'Iniciar Sesión',
-                'btn_signout': 'Cerrar Sesión', 'head_conversation': 'Knowsta', 
-                'head_settings': 'Configuración de la Aplicación', 'theme_label': 'Tema Actual:', 'theme_toggle': 'Alternar Tema',
-                'lang_label': 'Idioma de Respuesta', 'tone_label': 'Tono de Personalidad IA', 'close': 'Cerrar', 'submit': 'Enviar',
-                'user_name_default': 'Nombre de Usuario', 'profile_signin': 'Perfil de Usuario / Iniciar Sesión',
-                'welcome_head': '¿Cómo puedo ayudarte?', 
-                'welcome_sub': 'Estoy listo para asistirte.', 
-                'welcome_text': 'Comienza haciendo una pregunta, solicitando código o una sugerencia creativa.',
-                'placeholder': 'Pregunta lo que sea...' 
-            },
-             'French': {
-                'sidebar_username': 'Connexion / Profil', 'btn_new_chat': 'Nouveau Chat', 'btn_settings': 'Paramètres',
-                'btn_export': 'Exporter la conversation (.txt)', 'btn_about': 'À propos de Knowsta', 'btn_signin': 'Se Connecter',
-                'btn_signout': 'Déconnexion', 'head_conversation': 'Knowsta', 
-                'head_settings': 'Paramètres de l\'Appli', 'theme_label': 'Thème Actuel :', 'theme_toggle': 'Basculer Thème',
-                'lang_label': 'Langue de Réponse', 'tone_label': 'Ton de Personnalité IA', 'close': 'Fermer', 'submit': 'Soumettre',
-                'user_name_default': 'Nom d\'utilisateur', 'profile_signin': 'Profil Utilisateur / Connexion',
-                'welcome_head': 'Comment puis-je vous aider ?', 
-                'welcome_sub': 'Je suis prêt à vous assister.', 
-                'welcome_text': 'Commencez par poser une question, demander du code ou une invite créative.',
-                'placeholder': 'Demandez n\'importe quoi...' 
-            },
+        // Default (zeroed) profile data structure for a new user
+        const DEFAULT_PROFILE_DATA = {
+            name: '',
+            bio: "Tell us a little about your learning goals...",
+            location: "",
+            coursesStarted: 0,
+            certificatesEarned: 0,
+            hoursSpent: 0,
+            inProgressCourses: [],
         };
 
-        function getLocalizedText(key) {
-            const lang = localStorage.getItem(LANG_KEY) || 'English';
-            return (localizationData[lang] && localizationData[lang][key]) || localizationData['English'][key];
-        }
-
-        function translateUI(lang) {
-            // Main Header & Auth
-            const conversationHeader = document.querySelector('.main-chat-panel header h1');
-            if (conversationHeader) { 
-                conversationHeader.textContent = getLocalizedText('head_conversation');
-            }
-            const authBtnText = supabase?.auth.currentUser ? getLocalizedText('btn_signout') : getLocalizedText('btn_signin');
-            authButton.textContent = authBtnText;
-            
-            // Sidebar 
-            sidebarUsername.textContent = getLocalizedText('sidebar_username');
-            if (labelNewChat) labelNewChat.textContent = getLocalizedText('btn_new_chat');
-            if (labelSettings) labelSettings.textContent = getLocalizedText('btn_settings');
-            if (labelExport) labelExport.textContent = getLocalizedText('btn_export');
-            if (labelAbout) labelAbout.textContent = getLocalizedText('btn_about');
-            
-            // Settings Modal (FIX: Added null checks for modal elements)
-            if (settingsModal) {
-                const h2 = settingsModal.querySelector('h2');
-                if (h2) h2.textContent = getLocalizedText('head_settings');
-                
-                const pElements = settingsModal.querySelectorAll('.mb-6 p');
-                if (pElements[0]) pElements[0].textContent = 'Appearance'; // Static text
-                if (pElements[1]) pElements[1].textContent = getLocalizedText('lang_label');
-                if (pElements[2]) pElements[2].textContent = getLocalizedText('tone_label');
-
-                const toggleBtn = settingsModal.querySelector('[onclick="toggleTheme()"]');
-                if (toggleBtn) toggleBtn.textContent = getLocalizedText('theme_toggle');
-
-                const closeBtn = settingsModal.querySelector('.mt-6 button');
-                if (closeBtn) closeBtn.textContent = getLocalizedText('close');
-            }
-            
-            // Profile Modal
-            if (profileModal) {
-                const h2 = profileModal.querySelector('h2');
-                if (h2) h2.textContent = getLocalizedText('profile_signin');
-                
-                const profileAuthButton = document.getElementById('profile-auth-button');
-                if (profileAuthButton) profileAuthButton.textContent = supabase?.auth.currentUser ? getLocalizedText('btn_signout') : getLocalizedText('btn_signin');
-                
-                const closeBtn = profileModal.querySelector('.mt-4 button');
-                if (closeBtn) closeBtn.textContent = getLocalizedText('close');
-            }
-            
-            // Input Placeholder
-            if (userInput) {
-                 userInput.placeholder = getLocalizedText('placeholder');
-            }
-        }
+        // Profile data storage (will hold the merged data)
+        let userProfileData = { ...DEFAULT_PROFILE_DATA };
 
 
-        // --- THEME & APPEARANCE ---
+        // Colors for instructor avatars
+        const instructorAvatarColors = [
+            'bg-instructor-blue', 'bg-instructor-green', 'bg-instructor-red', 
+            'bg-instructor-purple', 'bg-instructor-yellow', 'bg-instructor-teal'
+        ];
 
-        /** Sets the theme class and updates the icon. */
-        function applyTheme(theme) {
-            let finalTheme = theme;
-            
-            if (finalTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.body.classList.add('dark');
-                // Moon Icon
-                if (themeIcon) {
-                     themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
-                }
-                currentThemeLabel.textContent = 'Dark';
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark');
-                 // Sun Icon
-                if (themeIcon) {
-                    themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
-                }
-                currentThemeLabel.textContent = 'Light';
-            }
-        }
-
-        window.toggleTheme = () => {
-            const currentTheme = localStorage.getItem(THEME_KEY);
-            let newTheme;
-
-            // Cycle: light -> dark -> light
-            if (currentTheme === 'light' || !currentTheme) {
-                newTheme = 'dark';
-            } else { // currentTheme is 'dark'
-                newTheme = 'light';
-            }
-            
-            localStorage.setItem(THEME_KEY, newTheme);
-            applyTheme(newTheme);
-        };
-
-        function loadTheme() {
-            const savedTheme = localStorage.getItem(THEME_KEY);
-            // Default to 'light' for initial load (FIX: Changed to 'light' from 'dark' for user request)
-            let initialTheme = savedTheme || 'light'; 
-            applyTheme(initialTheme);
-        }
+        // Mock Course Catalog (Used for Recommended/New User view)
+        const mockCourseCatalog = [
+            { id: 4, title: "Advanced React Hooks & Context", instructor: "Mia R.", progress: 0, category: "Development", image: 'https://placehold.co/400x200/3b82f6/ffffff?text=React' },
+            { id: 5, title: "Introduction to Cloud Computing (GCP)", instructor: "John B.", progress: 0, category: "Cloud", image: 'https://placehold.co/400x200/f59e0b/ffffff?text=Cloud' },
+            { id: 6, title: "The Art of Negotiation", instructor: "Priya D.", progress: 0, category: "Business", image: 'https://placehold.co/400x200/6366f1/ffffff?text=Business' },
+            { id: 7, title: "Creative Writing: Short Story Workshop", instructor: "Ella Z.", progress: 0, category: "Arts", image: 'https://placehold.co/400x200/ec4899/ffffff?text=Writing' },
+        ];
         
-        // --- Multilingual Support ---
-        window.updateLanguage = (selectedLang) => {
-            localStorage.setItem(LANG_KEY, selectedLang);
-            translateUI(selectedLang); 
-        };
-
-        window.updateLanguageFromModal = () => {
-            const selectedLang = modalLangSelector.value;
-            updateLanguage(selectedLang);
-        };
-
-        function loadLanguage() {
-            const savedLang = localStorage.getItem(LANG_KEY) || 'English';
-            updateLanguage(savedLang);
-            if (modalLangSelector) {
-                modalLangSelector.value = savedLang;
-            }
-        }
-
-        // --- Custom Tone (Personality) ---
-        window.updateTone = (selectedTone) => {
-            responseTone = selectedTone;
-            localStorage.setItem(TONE_KEY, responseTone);
-        };
-
-        window.updateToneFromModal = () => {
-            const selectedTone = modalToneSelector.value;
-            updateTone(selectedTone);
-        };
-
-        function loadTone() {
-            const savedTone = localStorage.getItem(TONE_KEY) || 'Friendly';
-            updateTone(savedTone);
-            if (modalToneSelector) {
-                modalToneSelector.value = savedTone;
-            }
-        }
-
-        // --- PROFILE CUSTOMIZATION (Local Storage Mock) ---
-        
-        /** Saves the Display Name (if editable) and Bio locally. */
-        window.saveProfileCustomization = async () => {
-             const user = supabase?.auth.currentUser;
-             profileBio = profileBioInput.value;
-             localStorage.setItem(getProfileBioKey(userId), profileBio);
-             
-             // Check if user is signed in via email/password (not Google) to allow name update
-             if (user && user.app_metadata.provider !== 'google') {
-                 const newDisplayName = profileNameInput.value.trim();
-                 if (newDisplayName && newDisplayName !== user.user_metadata.full_name) {
-                     const { error } = await supabase.auth.updateUser({
-                         data: { full_name: newDisplayName }
-                     });
-
-                     if (error) {
-                         console.error("Supabase name update error:", error);
-                         alert('Failed to update display name. ' + error.message);
-                     } else {
-                         // Force UI update
-                         const updatedUser = supabase?.auth.currentUser;
-                         if (updatedUser) updateAuthUI(updatedUser);
-                     }
-                 }
-             }
-        }
-
-        function loadProfileCustomization() {
-            // FIX: Load Bio using userId
-            profileBio = localStorage.getItem(getProfileBioKey(userId)) || '';
-            if (profileBioInput) {
-                profileBioInput.value = profileBio;
-            }
-            
-            // Set Display Name field state based on auth provider
-            const user = supabase?.auth.currentUser;
-            const displayName = user?.user_metadata.full_name || user?.email || getLocalizedText('user_name_default');
-            profileNameInput.value = displayName;
-            
-            // Google users cannot change their name via Supabase (read-only)
-            if (user && user.app_metadata.provider === 'google') {
-                profileNameInput.setAttribute('readonly', true);
-                profileNameInput.classList.add('opacity-70', 'cursor-not-allowed');
-            } else {
-                 profileNameInput.removeAttribute('readonly');
-                 profileNameInput.classList.remove('opacity-70', 'cursor-not-allowed');
-            }
-        }
-
-        // --- CHAT HISTORY MANAGEMENT ---
-
-        function saveChatHistory() {
-            const historyToStore = chatHistory.map(msg => ({
-                role: msg.role,
-                text: msg.text,
-                time: msg.time,
-            }));
-            if (historyToStore.length > 0) {
-                 // FIX: Saves to user-specific key
-                 localStorage.setItem(getChatHistoryKey(userId), JSON.stringify(historyToStore));
-            } else {
-                 localStorage.removeItem(getChatHistoryKey(userId));
-            }
-        }
-
-        function loadChatHistory() {
-            // FIX: Loads from user-specific key
-            const savedHistory = localStorage.getItem(getChatHistoryKey(userId));
-            if (savedHistory) {
-                try {
-                    const history = JSON.parse(savedHistory);
-                    if (history.length > 0) {
-                        chatHistory = history;
-                        chatWindow.innerHTML = '';
-                        history.forEach(msg => {
-                            // Reconstruct the message object for display without streaming simulation hassle
-                            addMessage(msg.role, msg.text, false, msg.time); 
-                        });
-                         setTimeout(() => { chatWindow.scrollTop = chatWindow.scrollHeight; }, 100);
-                        return true;
-                    }
-                } catch (e) {
-                    console.error("Error loading chat history:", e);
-                    localStorage.removeItem(getChatHistoryKey(userId));
-                }
-            }
-            return false;
-        }
-
-        // --- Modal Handlers ---
-        window.showAboutModal = () => { aboutModal.classList.remove('hidden'); aboutModal.classList.add('flex'); };
-        window.hideAboutModal = () => { aboutModal.classList.add('hidden'); aboutModal.classList.remove('flex'); };
-
-        window.showSettingsModal = () => { 
-            // Sync modal selectors with current state
-            modalLangSelector.value = localStorage.getItem(LANG_KEY) || 'English';
-            modalToneSelector.value = localStorage.getItem(TONE_KEY) || 'Friendly';
-            
-            settingsModal.classList.remove('hidden'); 
-            settingsModal.classList.add('flex'); 
-        };
-        window.hideSettingsModal = () => { settingsModal.classList.add('hidden'); settingsModal.classList.remove('flex'); };
-        
-        // FIX: Consolidated profile/auth click logic for the sidebar button
-        window.handleAuthClickOrProfile = () => {
-            const user = supabase?.auth.currentUser;
-            if (user) {
-                // If authenticated, show profile modal
-                showProfileModal();
-            } else {
-                // If not authenticated (Guest), initiate sign-in immediately
-                handleAuthClick();
-            }
-        }
-
-        window.showProfileModal = () => { 
-            const user = supabase?.auth.currentUser;
-            // Only show profile modal if authenticated
-            if (!user) {
-                // If not signed in, treat it as a sign-in action
-                handleAuthClick(); 
-                return;
-            }
-
-            const displayName = user?.user_metadata.full_name || user?.email || 'User';
-            const avatarUrl = user?.user_metadata.avatar_url;
-            const uid = user?.id || 'N/A';
-
-            profileNameText.textContent = displayName;
-            profileIdText.textContent = `ID: ${uid}`;
-            profileAvatarImg.src = avatarUrl || userAvatar.src; // Use current header avatar as fallback
-            
-            // Load Bio and set name field state
-            loadProfileCustomization(); 
-
-            // Show appropriate content based on auth status
-            const profileAuthButton = document.getElementById('profile-auth-button');
-            const authFormContainer = document.getElementById('auth-form-container');
-            
-            // If we are in this function, the user is AUTHENTICATED
-            profileAuthButton.textContent = getLocalizedText('btn_signout');
-            profileAuthButton.classList.replace('bg-indigo-600', 'bg-red-600');
-            profileAuthButton.onclick = handleAuthClick;
-            authFormContainer.classList.add('hidden');
-            
-            profileModal.classList.remove('hidden'); 
-            profileModal.classList.add('flex'); 
-        };
-        window.hideProfileModal = () => { profileModal.classList.add('hidden'); profileModal.classList.remove('flex'); };
-
-
-        // --- HISTORY LOGIC (Single Session, No Persistence) ---
-
-        /** Clears UI and history state to start a new conversation. */
-        window.startNewChat = () => {
-            chatHistory = [];
-            chatWindow.innerHTML = '';
-            
-            // FIX 3: Re-add the welcome message structure upon clicking New Chat
-            const messageDiv = document.createElement('div');
-            messageDiv.id = 'initial-message';
-            messageDiv.className = 'flex justify-center mt-20';
-            
-            // Generate content using localized strings
-            messageDiv.innerHTML = `<div class="text-center max-w-xs text-gray-500 transition duration-300">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">${getLocalizedText('welcome_head')}</h3>
-                <p class="text-lg font-semibold mb-2">${getLocalizedText('welcome_sub')}</p>
-                <p class="text-sm">${getLocalizedText('welcome_text')}</p>
-                <!-- TOPICS / GUIDED PROMPTS -->
-                <div class="mt-6 space-y-2 px-2 sm:px-0">
-                    <div class="text-center flex flex-wrap justify-center gap-2">
-                        <!-- UPDATED TOPICS (3 MEDIUM-LONG) -->
-                        <button class="topic-item text-sm py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full shadow-sm" onclick="sendTopic('Draft a professional email to a client requesting project feedback.')">Draft Email</button>
-                        <button class="topic-item text-sm py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full shadow-sm" onclick="sendTopic('Make a recipe for spicy noodle soup with ingredients and steps.')">Make Recipe</button>
-                        <button class="topic-item text-sm py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full shadow-sm" onclick="sendTopic('Suggest three simple activities for a weekend to boost mental clarity.')">Suggest Activities</button>
-                    </div>
-                </div>
-            </div>`;
-            chatWindow.appendChild(messageDiv);
-            saveChatHistory(); // Save empty history
-        };
-
-        window.sendTopic = (topicText) => {
-            userInput.value = topicText;
-            autoExpand(userInput);
-            sendMessage();
-        };
-
-        // --- EXPORT CHAT LOGIC (Unchanged) ---
-        window.exportChat = () => {
-            const chatElements = chatWindow.children;
-            if (chatElements.length === 0 || chatElements[0].id === 'initial-message') {
-                addMessage('system', 'No conversation to export.');
-                return;
-            }
-
-            let exportText = `# Knowsta Chat Log\n\nDate: ${new Date().toLocaleString()}\n---\n\n`;
-            
-            for (const el of chatElements) {
-                const bubble = el.querySelector('.chat-bubble-user, .chat-bubble-ai');
-                if (bubble) {
-                    const role = bubble.classList.contains('chat-bubble-user') ? 'User' : 'Knowsta';
-                    // Extract clean text content, replacing <br> with newlines and removing HTML tags
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = bubble.innerHTML;
-                    const text = tempDiv.textContent.trim().replace(/\s*\n\s*/g, '\n');
-                    
-                    exportText += `**${role}:** ${text}\n\n`;
-                } else if (el.textContent.includes('system')) {
-                    // Optionally include system messages
-                    exportText += `[System Message] ${el.textContent.trim()}\n\n`;
-                }
-            }
-
-            const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
-            const filename = `Knowsta_Chat_${new Date().toISOString().slice(0, 10)}.txt`;
-            
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            addMessage('system', `Chat exported as "${filename}".`);
+        // Mock Progress Data (Simulating a returning user's data)
+        const mockReturningUserData = {
+            coursesStarted: 7,
+            certificatesEarned: 3,
+            hoursSpent: 42.5,
+            inProgressCourses: [
+                { id: 1, title: "Modern Web Design with Tailwind", instructor: "Alex J.", progress: 75, category: "Design", image: 'https://placehold.co/400x200/4f46e5/ffffff?text=Web+Design' },
+                { id: 2, title: "Python for Data Science Fundamentals", instructor: "Dr. L. Khan", progress: 45, category: "Data Science", image: 'https://placehold.co/400x200/10b981/ffffff?text=Python' },
+                { id: 3, title: "Financial Modeling in Excel", instructor: "Sarah C.", progress: 10, category: "Finance", image: 'https://placehold.co/400x200/ef4444/ffffff?text=Finance' },
+            ],
         };
 
 
-        // --- SUPABASE INITIALIZATION & AUTH ---
-        
-        // Initialize Supabase client globally in the module scope
-        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        const updateAuthUI = (user) => {
-            // Store old userId to swap history later
-            const oldUserId = userId; 
-            
-            if (user) {
-                const displayName = user.user_metadata.full_name || user.email || 'User';
-                const avatarUrl = user.user_metadata.avatar_url;
-
-                // Main Header
-                authButton.textContent = getLocalizedText('btn_signout');
-                authButton.className = 'py-1 px-3 border border-gray-300 text-gray-700 text-sm rounded-full transition duration-150 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 animated-button';
-                userAvatar.src = avatarUrl || `https://placehold.co/32x32/4f46e5/ffffff?text=${displayName[0]}`;
-                userAvatar.classList.remove('hidden');
-                
-                // Sidebar
-                sidebarUsername.textContent = displayName;
-                userAvatarSidebar.src = userAvatar.src;
-                
-                userId = user.id;
-                sendButton.disabled = false;
-            } else {
-                // Main Header
-                authButton.textContent = getLocalizedText('btn_signin');
-                authButton.className = 'py-1 px-3 bg-[#004aad] text-white text-sm rounded-full transition duration-150 hover:bg-[#003a89] animated-button';
-                userAvatar.classList.add('hidden');
-                
-                // Sidebar
-                sidebarUsername.textContent = getLocalizedText('sidebar_username');
-                userAvatarSidebar.src = 'https://placehold.co/32x32/cccccc/ffffff?text=U';
-                
-                userId = 'guest';
-                sendButton.disabled = false;
-            }
-            
-            // FIX: If user changed, reload history and profile settings for the new userId
-            if (oldUserId !== userId) {
-                // Save previous user's history and load new user's history/profile
-                saveChatHistory(oldUserId); // Save the session the user just left
-                loadProfileCustomization(); // Load new user's profile bio
-                
-                if (!loadChatHistory()) {
-                    startNewChat(); // If new user has no history, start fresh
-                }
-            }
-        };
-        
-        window.handleAuthClick = async () => {
-            playSendSound();
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session) {
-                // Sign Out
-                try {
-                    // FIX: Save current history before signing out (to be loaded next time)
-                    saveChatHistory(); 
-                    await supabase.auth.signOut();
-                    startNewChat(); 
-                    addMessage('system', 'You have been signed out. Start a new chat.');
-                    playReceiveSound();
-                } catch (error) {
-                    console.error("Supabase Sign out error:", error);
-                    addMessage('system', `Error signing out: ${error.message}. Please try again.`);
-                }
-            } else {
-                // Sign In (Google)
-                try {
-                    const { error } = await supabase.auth.signInWithOAuth({ 
-                        provider: 'google', 
-                        options: {
-                            // Implementing the user's specific redirectTo path for Supabase fix
-                            redirectTo: `${window.location.origin}/knowsta/` 
-                        }
-                    });
-                    if (error) throw error;
-                } catch (error) {
-                    console.error("Supabase Google sign in error:", error);
-                    addMessage('system', `Error signing in with Google: ${error.message}. Please check your browser settings or try again.`);
-                }
-            }
-        };
-
-        // Modal Email/Password Auth
-        window.handleModalEmailAuth = async () => {
-            const email = document.getElementById('modal-email-input').value;
-            const password = document.getElementById('modal-password-input').value;
-            const modalAuthMessage = document.getElementById('modal-auth-message');
-            const emailAuthButton = document.getElementById('modal-email-auth-button');
-
-            modalAuthMessage.classList.add('hidden');
-            emailAuthButton.disabled = true;
-            emailAuthButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Authenticating...`;
-
-            if (!email || password.length < 6) {
-                modalAuthMessage.textContent = "Please enter a valid email and password (min 6 chars).";
-                modalAuthMessage.classList.remove('hidden');
-                emailAuthButton.disabled = false;
-                emailAuthButton.innerHTML = 'Submit';
-                return;
-            }
-
-            // 1. Attempt Sign In
-            let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-            if (error && error.message.includes('Invalid login credentials')) {
-                // 2. If Sign In fails, attempt Sign Up
-                ({ data, error } = await supabase.auth.signUp({ email, password }));
-                
-                if (!error && data.user) {
-                     // Successful sign-up & immediate sign-in (Listener fires)
-                     modalAuthMessage.textContent = `Success! Signed up and logged in.`;
-                     modalAuthMessage.classList.remove('hidden');
-                } else if (!error && data.session === null) {
-                     // Successful sign-up, requires email confirmation
-                     modalAuthMessage.textContent = `Sign Up successful! Check your email to confirm your account.`;
-                     modalAuthMessage.classList.remove('hidden');
-                }
-                
-            } else if (error) {
-                // 3. Other Sign In error
-                modalAuthMessage.textContent = `Auth Error: ${error.message}`;
-                modalAuthMessage.classList.remove('hidden');
-            } else if (data.user) {
-                // 4. Successful Sign In (Listener fires)
-                modalAuthMessage.textContent = `Welcome back, ${email}!`;
-                modalAuthMessage.classList.remove('hidden');
-            }
-            
-            emailAuthButton.disabled = false;
-            emailAuthButton.innerHTML = 'Submit';
-        };
-
-        supabase.auth.onAuthStateChange((event, session) => {
-            const user = session?.user;
-            updateAuthUI(user);
-            translateUI(localStorage.getItem(LANG_KEY) || 'English'); // Always translate on auth change
-            if (event === 'SIGNED_IN') {
-                // NOTE: History/profile swap handled in updateAuthUI
-                addMessage('system', `Welcome, ${user.user_metadata.full_name || 'User'}! I am ready to assist you.`);
-                hideProfileModal(); // Close modal on successful sign-in
-            }
-        });
-
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            updateAuthUI(session?.user);
-        });
-
-
-        // --- SPEECH RECOGNITION (Voice Input - Unchanged) ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let isListening = false;
-        
-        if (SpeechRecognition) {
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.continuous = false;
-            speechRecognition.interimResults = true;
-            speechRecognition.lang = 'en-US'; // Can be updated based on user preference
-
-            speechRecognition.onstart = () => {
-                isListening = true;
-                micButton.title = "Listening...";
-                micButton.classList.replace('text-gray-500', 'text-red-500');
-                micButton.classList.add('animate-pulse');
-                userInput.focus();
-            };
-
-            speechRecognition.onresult = (event) => {
-                const transcript = Array.from(event.results)
-                    .map(result => result[0])
-                    .map(result => result.transcript)
-                    .join('');
-                
-                userInput.value = transcript;
-                autoExpand(userInput);
-                validateInput();
-            };
-
-            speechRecognition.onend = () => {
-                isListening = false;
-                micButton.title = "Start Voice Input";
-                micButton.classList.replace('text-red-500', 'text-gray-500');
-                micButton.classList.remove('animate-pulse');
-                if (userInput.value.trim() !== '') {
-                    sendMessage(); // Auto-send if content exists
-                }
-            };
-
-            speechRecognition.onerror = (event) => {
-                console.error('Speech recognition error', event);
-                addMessage('system', `Voice input failed: ${event.error}. Ensure microphone access is allowed.`);
-                isListening = false;
-                micButton.title = "Start Voice Input";
-                micButton.classList.replace('text-red-500', 'text-gray-500');
-                micButton.classList.remove('animate-pulse');
-            };
-        } else {
-            micButton.disabled = true;
-            micButton.title = "Voice Input not supported by your browser.";
-        }
-
-        window.toggleVoiceInput = () => {
-            if (!speechRecognition) return;
-
-            if (isListening) {
-                speechRecognition.stop();
-            } else {
-                speechRecognition.start();
-            }
-        };
-
-
-        // --- UI UTILITIES ---
-
-        window.autoExpand = (element) => {
-            element.style.height = 'auto';
-            element.style.height = element.scrollHeight + 'px';
-        };
-
-        window.validateInput = () => {
-            const hasInput = userInput.value.trim() !== '';
-            sendButton.disabled = !hasInput;
-            userInput.placeholder = hasInput ? getLocalizedText('placeholder') : getLocalizedText('placeholder');
-        };
-
-        /** Adds a message bubble to the chat window. */
-        function addMessage(role, text, isImageHtml = false, timestamp = null) {
-            // FIX: Remove the initial prompt block reliably on first message
-            const promptBlock = document.getElementById('initial-message');
-            if (promptBlock) {
-                promptBlock.remove();
-            }
-            
-            const isUser = role === 'user';
-            const messageId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-            const currentTime = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            // NEW: Robust text escaping for HTML onclick attributes
-            const escapedTextForHtmlAttr = text
-                .replace(/\\/g, '\\\\') // Escape backslashes first
-                .replace(/'/g, "\\'")   // Escape single quotes
-                .replace(/\n/g, '\\n')  // Escape newlines
-                .replace(/\r/g, '');    // Remove carriage returns
-
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `flex ${isUser ? 'justify-end user-message-wrapper' : 'justify-start ai-message-wrapper'}`;
-            messageContainer.id = messageId;
-
-
-            const contentBlock = document.createElement('div');
-            contentBlock.className = 'flex flex-col';
-
-            const bubble = document.createElement('div');
-            const isSystem = role === 'system';
-            
-            let bubbleClass = 'max-w-[85%] px-4 py-2 rounded-xl text-sm transition duration-300';
-            
-            if (isUser) {
-                 bubbleClass += ' chat-bubble-user ml-auto';
-            } else if (role === 'model') {
-                 bubbleClass += ' chat-bubble-ai mr-auto';
-            } else if (isSystem) {
-                 bubbleClass = 'max-w-full text-center px-4 py-1 text-xs text-gray-500 transition duration-300';
-            }
-
-            bubble.className = bubbleClass;
-            
-            // Handle Text Content (applies to all roles)
-            if (text) {
-                let formattedText = text;
-                
-                if (isImageHtml) {
-                    formattedText = text; // Use raw HTML
-                } else {
-                    // Apply Markdown only if it's not raw image HTML
-                    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    formattedText = formattedText.replace(/###\s*(.*)/g, '<h3 class="font-bold text-md mt-2 mb-1">$1</h3>');
-                    formattedText = formattedText.replace(/##\s*(.*)/g, '<h2 class="font-bold text-lg mt-3 mb-1">$1</h2>');
-                    formattedText = formattedText.replace(/^\*\s*(.*)/gm, '<li class="ml-4 list-disc">$1</li>');
-                    
-                    if (formattedText.includes('<li>')) {
-                        formattedText = `<ul class="list-disc space-y-1">${formattedText}</ul>`;
-                    }
-                }
-
-                const textNode = document.createElement('div');
-                textNode.innerHTML = formattedText;
-                bubble.appendChild(textNode);
-            }
-            
-            if (!isSystem) {
-                contentBlock.appendChild(bubble);
-                
-                // Add Edit/Regenerate Controls (Visible on hover via CSS)
-                const controls = document.createElement('div');
-                controls.className = 'message-controls flex gap-1 mt-1 text-gray-400 dark:text-gray-500 text-xs opacity-0 transition duration-200';
-                
-                // --- Copy Button (All non-system messages) ---
-                controls.innerHTML += `<button onclick="copyToClipboard('${escapedTextForHtmlAttr}')" class="hover:text-[#004aad] px-1 rounded-md" title="Copy Text"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5h2M12 7v8m-4-4h8"/></svg></button>`;
-
-                if (isUser) {
-                    // User Controls: Edit, Delete
-                    controls.innerHTML += `<button onclick="editMessage('${messageId}', '${escapedTextForHtmlAttr}')" class="hover:text-[#004aad] px-1 rounded-md" title="Edit Message"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.836a4 4 0 015.656 5.656l-14 14H5v-4L18.732 6.732z" /></svg></button>`;
-                    controls.innerHTML += `<button onclick="deleteMessage('${messageId}')" class="hover:text-red-500 px-1 rounded-md" title="Delete Message"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>`;
-                    contentBlock.appendChild(controls);
-                    contentBlock.classList.add('items-end'); // Align controls right
-                    contentBlock.innerHTML += `<p class="timestamp text-gray-500 dark:text-gray-400 self-end">${currentTime}</p>`; // Timestamp
-                } else if (role === 'model') {
-                    // AI Controls: Listen, Regenerate, Delete
-                    controls.innerHTML += `<button onclick="listenToMessage('${escapedTextForHtmlAttr}')" class="hover:text-[#004aad] px-1 rounded-md" title="Listen to Answer"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V5l9 7-9 7z" /></svg></button>`;
-                    controls.innerHTML += `<button onclick="regenerateResponse('${messageId}')" class="hover:text-[#004aad] px-1 rounded-md" title="Regenerate Response"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.93 8.93 0 0120 12c0 4.97-4.03 9-9 9a9 9 0 01-7.743-4.52M20 12h3M4 12H1m7.643-7.52L10 2m9.778 3.52L22 7m-11.778 13.52L14 22M4 12a8.93 8.93 0 01-1.356-4.52M12 2v3m-7 4l-.582-1.42" /></svg></button>`;
-                    controls.innerHTML += `<button onclick="deleteMessage('${messageId}')" class="hover:text-red-500 px-1 rounded-md" title="Delete Message"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>`;
-                    contentBlock.appendChild(controls);
-                    contentBlock.classList.add('items-start'); // Align controls left
-                    contentBlock.innerHTML += `<p class="timestamp text-gray-500 dark:text-gray-400 self-start">${currentTime}</p>`; // Timestamp
-                }
-
-                messageContainer.appendChild(contentBlock);
-
-            } else {
-                messageContainer.innerHTML = bubble.innerHTML;
-            }
-
-            chatWindow.appendChild(messageContainer);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        
         /**
-         * Generic LLM API caller with exponential backoff.
+         * Utility function to get the current Supabase client.
          */
-        async function fetchWithRetry(url, payload, maxRetries = 3) {
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+        function getSupabaseClient(url, key) {
+            if (supabase && supabase.supabaseUrl === url && supabase.supabaseKey === key) {
+                return supabase;
+            }
+            return createClient(url, key);
+        }
 
-                    if (response.ok) {
-                        return await response.json();
-                    }
+        // --- Core Authentication Functions (Supabase) ---
 
-                    if (response.status >= 500 || response.status === 429) {
-                        throw new Error(`Server error or rate limited: Status ${response.status}`);
-                    } else {
-                        const errorBody = await response.json();
-                        throw new Error(`API call failed: ${response.status} - ${JSON.stringify(errorBody)}`);
-                    }
+        /**
+         * Initializes Supabase client and sets up the authentication listener.
+         */
+        async function setupSupabase() {
+            try {
+                supabase = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-                } catch (error) {
-                    console.error(`Attempt ${i + 1} failed:`, error.message);
-                    if (i === maxRetries - 1) {
-                        throw error;
+                // Initialize currentView from hash on load
+                currentView = window.location.hash.substring(1) || 'dashboard';
+
+                // 2. Listen for authentication state changes
+                supabase.auth.onAuthStateChange((event, session) => {
+                    currentUser = session ? session.user : null;
+                    isLoading = false;
+                    renderApp(); 
+                    hideLoadingOverlay();
+                    
+                    if (event === 'SIGNED_IN') {
+                        // On sign-in, try to fetch the profile
+                        fetchUserProfile();
+                        showModal("Welcome!", "You are now signed in to Knowsta Learn.", "check-circle");
+                    } else if (event === 'SIGNED_OUT') {
+                         userProfileData = { ...DEFAULT_PROFILE_DATA }; // Reset to default structure
                     }
-                    const delay = Math.pow(2, i) * 1000 + Math.random() * 500;
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                });
+                
+                // 3. Check for initial session immediately
+                const { data: { session } = {} } = await supabase.auth.getSession(); 
+                currentUser = session ? session.user : null;
+
+                if (currentUser) {
+                     await fetchUserProfile(); // Fetch profile if already logged in
                 }
+                
+                if (isLoading) {
+                    isLoading = false;
+                    renderApp();
+                    hideLoadingOverlay();
+                }
+
+            } catch (error) {
+                console.error("Supabase setup failed:", error);
+                isLoading = false;
+                renderApp();
+                hideLoadingOverlay();
+                showModal("Setup Error", "Failed to initialize Supabase. Check the URL and Key configuration.", "x");
             }
         }
 
-        // --- MESSAGE EDIT/REGENERATE/DELETE/COPY/LISTEN LOGIC ---
+        /**
+         * Initiates Google Sign-In using Supabase's OAuth method.
+         */
+        window.signInWithGoogle = async function() {
+            try {
+                const authClient = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                showModal("Signing In...", "Redirecting to Google for sign-in...", "loader-2", true);
 
-        /** Edits the user message associated with the ID and prepares for resending. */
-        window.editMessage = (messageId, oldText) => {
-            // 1. Load message into input
-            userInput.value = oldText;
-            autoExpand(userInput);
-            validateInput();
-            userInput.focus();
+                const { error } = await authClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname, 
+                        queryParams: { access_type: 'offline', prompt: 'consent', }
+                    },
+                });
 
-            // 2. Remove the message and subsequent AI response from the DOM
-            const userMsgElement = document.getElementById(messageId);
-            if (userMsgElement) {
-                // The user message is being edited, so remove it and the message immediately following it (the AI response).
-                const aiMsgElement = userMsgElement.nextElementSibling;
-                userMsgElement.remove();
-                if (aiMsgElement) {
-                     aiMsgElement.remove();
+                if (error) {
+                    showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
+                    throw error;
                 }
+            } catch (error) {
+                console.error("Google Sign-In failed:", error.message);
+                if (!document.getElementById('modal-spinner').classList.contains('hidden')) { 
+                    showModal("Sign In Failed", error.message || "Failed to sign in. Please try again.", "alert-circle");
+                }
+            } finally {
+                hideSpinner(); 
+            }
+        }
+
+        /**
+         * Signs out the current user via Supabase.
+         */
+        window.signOutUser = async function() {
+             try {
+                const authClient = getSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                showModal("Signing Out...", "Please wait while we log you out...", "loader-2", true); 
+                const { error } = await authClient.auth.signOut();
+                if (error) {
+                    showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
+                    throw error;
+                }
+                showModal("Signed Out", "You have been signed out. Come back soon!", "log-out");
+            } catch (error) {
+                console.error("Sign-out failed:", error);
+                 if (!document.getElementById('mock-modal').classList.contains('flex')) { 
+                    showModal("Sign Out Error", "Could not sign you out. Please try again.", "alert-circle");
+                }
+            } finally {
+                hideSpinner();
+            }
+        }
+        
+        // --- Supabase Database Mock/Placeholder Functions ---
+
+        /**
+         * Mocks fetching the user profile data (bio, location, stats) from a Supabase table.
+         * Sets default/zeroed data if no profile is found.
+         */
+        async function fetchUserProfile() {
+            const displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Learner';
+            
+            // 1. Reset to default and apply name from Auth
+            userProfileData = { ...DEFAULT_PROFILE_DATA, name: displayName };
+            
+            // 2. MOCK DATA CHECK: In a live app, you'd check a Supabase table here.
+            
+            // MOCK LOGIC: We will assume a user who has 'L' in their initials (like 'Learner') is new, 
+            // and anyone else is a returning user (for demonstration purposes).
+            const isReturningUserMock = !displayName.toUpperCase().includes('L'); 
+
+            if (isReturningUserMock) {
+                // If returning, merge mock progress data (simulating DB retrieval)
+                userProfileData = {
+                    ...userProfileData,
+                    ...mockReturningUserData,
+                    bio: "I'm interested in advancing my career in data science and product management.",
+                    location: "New York, NY",
+                };
+            }
+            // If new user, userProfileData remains DEFAULT_PROFILE_DATA (zeroed)
+
+            // Render the settings page with the fetched data
+            if (currentView === 'settings') {
+                renderSettingsView();
+            }
+        }
+
+        /**
+         * Mocks updating the user profile data (bio, location) in a Supabase table.
+         */
+        window.updateUserProfile = async function() {
+            if (!currentUser) {
+                showModal("Error", "You must be signed in to update your profile.", "alert-circle");
+                return;
             }
             
-            // 3. Clear the chatHistory state (only used for the last exchange anyway)
-            chatHistory = []; 
-            saveChatHistory();
-        };
+            const newBio = document.getElementById('profile-bio').value;
+            const newLocation = document.getElementById('profile-location').value;
 
-        /** Regenerates the AI response for a given model message ID. */
-        window.regenerateResponse = (modelMessageId) => {
-            const modelMsgElement = document.getElementById(modelMessageId);
-            if (!modelMsgElement) return;
-
-            // The user message is the element immediately preceding the model message.
-            const userMsgElement = modelMsgElement.previousElementSibling;
-            if (!userMsgElement || !userMsgElement.querySelector('.chat-bubble-user')) {
-                 addMessage('system', 'Cannot regenerate. The original user query is missing.');
+            // Basic validation
+            if (newBio.length > 150) {
+                 showModal("Validation Error", "Bio must be 150 characters or less.", "alert-triangle");
                  return;
             }
-            
-            // Get the user's text content
-            const userText = userMsgElement.querySelector('.chat-bubble-user').textContent.trim();
-            
-            // 1. Remove the old AI response from the DOM
-            modelMsgElement.remove();
 
-            // 2. Clear history state and resend the user message
-            chatHistory = []; 
+            userProfileData.bio = newBio;
+            userProfileData.location = newLocation;
             
-            // Resend the message (passing the text directly and setting isRegenerate flag)
-            addMessage('system', 'Regenerating response...');
-            sendMessage(userText, true); 
+            // --- LIVE SUPABASE LOGIC GOES HERE ---
+            showModal("Saving Profile...", "Updating your profile information...", "loader-2", true);
+
+            /*
+            // 1. Define the data to upsert
+            const profileUpdate = { 
+                id: currentUser.id, // Supabase recommends using auth.uid as primary key
+                bio: newBio, 
+                location: newLocation,
+                updated_at: new Date(),
+            };
+            
+            // 2. Execute the upsert (insert or update) operation in the 'user_profiles' table
+            const { error } = await supabase
+                .from('user_profiles')
+                .upsert(profileUpdate, { onConflict: 'id' });
+
+            if (error) {
+                showModal("Update Failed", error.message, "alert-circle");
+                return;
+            }
+            */
+
+            // --- END LIVE SUPABASE LOGIC ---
+
+            // Mock success and re-render
+            setTimeout(() => {
+                showModal("Profile Saved!", "Your account settings have been updated.", "check-circle");
+                renderApp(); 
+            }, 500);
+        }
+
+        // --- View Navigation ---
+
+        /**
+         * Handles routing between different application views.
+         */
+        window.navigateTo = function(view) {
+            if (!currentUser && view !== 'about') {
+                // Prevent navigation if not logged in (except for About page)
+                view = 'dashboard';
+            }
+            
+            // Update URL hash without firing onhashchange event handler (to avoid loops)
+            if (currentView !== view) {
+                history.pushState(null, null, `#${view}`);
+            }
+            currentView = view;
+            renderApp();
         };
         
-        /** Deletes a message and its subsequent AI response (if applicable) */
-        window.deleteMessage = (messageId) => {
-            const elementToDelete = document.getElementById(messageId);
-            if (!elementToDelete) return;
-            
-            const isUserMessage = elementToDelete.classList.contains('user-message-wrapper');
-            const aiMsgElement = isUserMessage ? elementToDelete.nextElementSibling : null;
-
-            // 1. Remove from DOM
-            elementToDelete.remove();
-            if (aiMsgElement) aiMsgElement.remove();
-
-            // 2. Rebuild history from remaining elements (ensures consistency)
-            const remainingMessages = Array.from(chatWindow.querySelectorAll('.user-message-wrapper, .ai-message-wrapper'))
-                .filter(el => el.querySelector('.chat-bubble-user, .chat-bubble-ai')) // Only process containers with chat bubbles
-                .map(el => {
-                    const bubble = el.querySelector('.chat-bubble-user, .chat-bubble-ai');
-                    const isUser = el.classList.contains('user-message-wrapper');
-                    const text = bubble.textContent.trim();
-                    const timeEl = el.querySelector('.timestamp');
-                    const time = timeEl ? timeEl.textContent : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    return { role: isUser ? 'user' : 'model', text: text, time: time, parts: [{text: text}] };
-                });
-            
-            chatHistory = remainingMessages;
-            saveChatHistory(); 
-
-            // If the window is now empty, re-show the welcome message
-            if (chatWindow.childElementCount === 0) {
-                startNewChat();
+        // Handle browser back/forward buttons
+        window.onhashchange = function() {
+            const newView = window.location.hash.substring(1) || 'dashboard';
+            // Only call renderApp if the view actually changed from an external navigation action
+            if (currentView !== newView) {
+                currentView = newView;
+                renderApp();
             }
         };
 
-        /** Copies text to the clipboard. */
-        window.copyToClipboard = (text) => {
-            // Use the reliable document.execCommand('copy') method for cross-browser support in iframes
-            const tempInput = document.createElement('textarea');
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
+
+        // --- Utility Functions (Modal, Clipboard) ---
+
+        window.closeModal = function() {
+            const modal = document.getElementById('mock-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            hideSpinner();
+        }
+
+        function showModal(title, message, icon, showSpinner = false) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            
+            const modalIcon = document.getElementById('modal-icon');
+            const modalSpinner = document.getElementById('modal-spinner');
+
+            if (showSpinner) {
+                modalIcon.classList.add('hidden');
+                modalSpinner.classList.remove('hidden');
+            } else {
+                modalIcon.classList.remove('hidden');
+                modalSpinner.classList.add('hidden');
+                modalIcon.setAttribute('data-lucide', icon || 'check-circle');
+            }
+            
+            if (window.lucide) lucide.createIcons();
+            
+            document.getElementById('mock-modal').classList.remove('hidden');
+            document.getElementById('mock-modal').classList.add('flex');
+        }
+
+        function hideSpinner() {
+            document.getElementById('modal-spinner').classList.add('hidden');
+            document.getElementById('modal-icon').classList.remove('hidden'); 
+        }
+
+        window.copyToClipboard = function(textToCopy, courseId) {
+            const textarea = document.getElementById('clipboard-helper');
+            textarea.value = textToCopy;
+            textarea.select();
             
             try {
                 document.execCommand('copy');
-                addMessage('system', 'Text copied to clipboard.');
+                showModal("Link Copied!", `The share link for Course ID ${courseId} has been copied to your clipboard. Share your progress!`, "copy");
             } catch (err) {
                 console.error('Could not copy text: ', err);
-                addMessage('system', 'Failed to copy text. Please try manually.');
-            } finally {
-                document.body.removeChild(tempInput);
-            }
-        };
-
-
-        // --- TTS UTILITY FUNCTIONS (Unchanged) ---
-        function base64ToArrayBuffer(base64) {
-            const binaryString = window.atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        function writeString(view, offset, string) {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
+                showModal("Copy Failed", "Could not automatically copy the link. Please try again.", "alert-circle");
             }
         }
 
-        function pcmToWav(pcm16, sampleRate) {
-            const numChannels = 1;
-            const numSamples = pcm16.length;
-            const buffer = new ArrayBuffer(44 + numSamples * 2);
-            const view = new DataView(buffer);
-            let offset = 0;
-
-            // RIFF identifier
-            writeString(view, offset, 'RIFF'); offset += 4;
-            // file length (byte length of data + 36)
-            view.setUint32(offset, 36 + numSamples * 2, true); offset += 4;
-            // RIFF type
-            writeString(view, offset, 'WAVE'); offset += 4;
-            // format chunk identifier
-            writeString(view, offset, 'fmt '); offset += 4;
-            // format chunk length
-            view.setUint32(offset, 16, true); offset += 4;
-            // sample format (1 = PCM)
-            view.setUint16(offset, 1, true); offset += 2;
-            // number of channels
-            view.setUint16(offset, numChannels, true); offset += 2;
-            // sample rate
-            view.setUint32(offset, sampleRate, true); offset += 4;
-            // byte rate (SampleRate * NumChannels * BitsPerSample/8)
-            view.setUint32(offset, sampleRate * numChannels * 2, true); offset += 4;
-            // block align (NumChannels * BitsPerSample/8)
-            view.setUint16(offset, numChannels * 2, true); offset += 2;
-            // bits per sample
-            view.setUint16(offset, 16, true); offset += 2;
-            // data chunk identifier
-            writeString(view, offset, 'data'); offset += 4;
-            // data chunk length
-            view.setUint32(offset, numSamples * 2, true); offset += 4;
-
-            // Write PCM data
-            for (let i = 0; i < numSamples; i++) {
-                view.setInt16(offset, pcm16[i], true);
-                offset += 2;
-            }
-
-            return new Blob([view], { type: 'audio/wav' });
+        window.startCourse = function(courseId, courseTitle) {
+            showModal("Course Started!", `You are now enrolled in "${courseTitle}". Happy learning!`, "send");
         }
 
-
-        window.listenToMessage = async (text) => {
-            // Show temporary listening message
-            const tempMsgId = `tts-msg-${Date.now()}`;
-            addMessage('system', 'Generating audio...', false, tempMsgId);
-            
-            // WARNING: Exposed API Key is used here. For production, this must be proxied.
-            const ttsUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${API_KEY}`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: text }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } // Using Kore voice for clear tone
-                    }
-                },
-            };
-
-            try {
-                const result = await fetchWithRetry(ttsUrl, payload);
-                const part = result?.candidates?.[0]?.content?.parts?.[0];
-                
-                const audioData = part?.inlineData?.data;
-                const mimeType = part?.inlineData?.mimeType; // Expected: audio/L16;rate=24000
-
-                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
-                    const match = mimeType.match(/rate=(\d+)/);
-                    const sampleRate = match ? parseInt(match[1], 10) : 24000;
-                    
-                    const pcmData = base64ToArrayBuffer(audioData);
-                    const pcm16 = new Int16Array(pcmData);
-                    
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    const audioUrl = URL.createObjectURL(wavBlob);
-                    
-                    const audio = new Audio(audioUrl);
-                    audio.play();
-
-                    // Replace temporary message
-                    const tempMsg = document.getElementById(tempMsgId);
-                    if(tempMsg) tempMsg.remove();
-                    
-                    audio.onplay = () => addMessage('system', 'Playing audio...');
-                    audio.onended = () => { /* Clean up after playback */ };
-
-                } else {
-                    throw new Error("Invalid audio response format.");
-                }
-
-            } catch (error) {
-                console.error("TTS API call failed:", error);
-                const tempMsg = document.getElementById(tempMsgId);
-                if(tempMsg) tempMsg.remove();
-                addMessage('system', `Audio playback failed. Please try again.`);
-            }
-        };
-
-
-        // --- MAIN CHAT LOGIC (Includes Streaming Simulation) ---
-
-        window.sendMessage = async function(overrideText, isRegenerate = false) {
-            const userText = overrideText || userInput.value.trim();
-            
-            if (!userText) return;
-
-            // 1. Update UI and history for user message
-            
-            if (!isRegenerate) {
-                const userMessageParts = [{ text: userText }];
-                addMessage('user', userText);
-                
-                // NOTE: Chat history is CLEARED before sending to simulate short, memory-less interaction.
-                chatHistory = [{ role: 'user', parts: userMessageParts, text: userText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]; 
-            }
-            
-            userInput.value = '';
-            userInput.style.height = 'auto'; 
-            sendButton.disabled = true;
-            loadingIndicator.classList.remove('hidden');
-
-            playSendSound();
-
-            // WARNING: Exposed API Key is used here. For production, this must be proxied.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${FLASH_MODEL}:generateContent?key=${API_KEY}`;
-            
-            // 2. Prepare payload (use ONLY the current message and selected language/tone)
-            const responseLanguage = localStorage.getItem(LANG_KEY) || 'English';
-            
-            // --- FIX: Injected detailed Knowsta background into system instruction ---
-            const knowstaBackground = `Knowsta is an AI-powered communication app developed by Sithu Nyein. Its main challenge is consistently interpreting human intent and context while providing accurate, helpful, and unbiased responses. The roadmap includes improving sign-in flow, ensuring data persistence (name, photo, preferences), enabling user profile editing, and enhancing AI accuracy. Address any self-referential queries using this context.`;
-            
-            const systemInstruction = `${knowstaBackground} You are Knowsta, an advanced and friendly conversational AI. Your primary goal is to provide **the absolute fastest, most concise, and highly relevant answer**. You MUST detect the language of the user's current query and respond in that same language. Adopt a **${responseTone}** tone and personality. Keep your responses short and well-structured using Markdown. Do not include unnecessary conversational filler or preamble.`;
-
-            // FIX: Clean the chatHistory array to only include 'role' and 'parts' for the API call.
-            const cleanHistory = chatHistory.map(msg => ({
-                role: msg.role,
-                parts: msg.parts,
-            }));
-
-            const payload = {
-                contents: cleanHistory, // Use the cleaned history array
-                systemInstruction: { parts: [{ text: systemInstruction }] }
-            };
-
-            let aiResponseText = "";
-            
-            // Add a temporary AI bubble to receive the streamed text
-            let tempBubble = null;
-            
-            // Create a temporary placeholder message bubble for the AI response
-            const aiId = `ai-temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-            tempBubble = document.createElement('div');
-            tempBubble.className = `flex justify-start ai-message-wrapper`;
-            tempBubble.id = aiId;
-            
-            const contentBlock = document.createElement('div');
-            contentBlock.className = 'flex flex-col items-start';
-            
-            const bubble = document.createElement('div');
-            bubble.className = 'max-w-[85%] px-4 py-2 rounded-xl text-sm transition duration-300 chat-bubble-ai mr-auto';
-            bubble.innerHTML = `<span class="italic text-gray-400">...</span>`; // Initial loading text
-
-            contentBlock.appendChild(bubble);
-            tempBubble.appendChild(contentBlock);
-            chatWindow.appendChild(tempBubble);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-
-
-            try {
-                const result = await fetchWithRetry(apiUrl, payload);
-                const candidate = result.candidates?.[0];
-
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    aiResponseText = candidate.content.parts[0].text;
-                    
-                    // --- TYPING SIMULATION (Streaming UX) ---
-                    const speed = 10; // FASTER ms per character (was 15)
-                    let i = 0;
-                    
-                    const streamFn = () => {
-                        if (i < aiResponseText.length) {
-                            const chunk = aiResponseText.substring(0, i + 1);
-                            // Update the innerHTML of the temporary bubble
-                            const targetBubble = document.getElementById(aiId)?.querySelector('.chat-bubble-ai');
-                            if (targetBubble) {
-                                targetBubble.innerHTML = chunk.replace(/\n/g, '<br>');
-                                chatWindow.scrollTop = chatWindow.scrollHeight;
-                            }
-                            i++;
-                            setTimeout(streamFn, speed);
-                        } else {
-                            // --- FINISHED STREAMING ---
-                            loadingIndicator.classList.add('hidden');
-                            sendButton.disabled = false;
-                            userInput.focus();
-                            
-                            // 3. Finalize and save the AI response 
-                            
-                            // Add final AI response to history state
-                            chatHistory.push({ role: 'model', text: aiResponseText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), parts: [{text: aiResponseText}] });
-
-                            saveChatHistory();
-
-                            // Remove the temporary streaming bubble
-                            tempBubble.remove();
-                            // Add the final, fully formatted message
-                            addMessage('model', aiResponseText);
-                            
-                            playReceiveSound();
-                            validateInput();
-                        }
-                    };
-                    streamFn(); // Start the typing simulation
-
-                } else if (result.error && result.error.message) {
-                    aiResponseText = `AI Error: ${result.error.message}. Please try again.`;
-                    addMessage('system', aiResponseText);
-                } else {
-                     aiResponseText = "Sorry, I received a blank response.";
-                     addMessage('system', aiResponseText);
-                }
-
-            } catch (error) {
-                console.error("Gemini API call failed:", error);
-                addMessage('system', `Network Error: I'm having trouble connecting to the AI. Details: ${error.message}. Please check your internet connection and try again.`);
-            } finally {
-                // If an error occurred before or during streaming setup, ensure final state is set
-                if (loadingIndicator.classList.contains('hidden') === false) {
-                    loadingIndicator.classList.add('hidden');
-                    sendButton.disabled = false;
-                    userInput.focus();
-                    validateInput();
-                    
-                    // If streaming didn't start/complete successfully, remove the temporary bubble
-                    if (tempBubble) tempBubble.remove();
-                    saveChatHistory();
-                }
-            }
-        };
-
-
-        // Enable buttons when text is present
-        userInput.addEventListener('input', () => {
-            const hasInput = userInput.value.trim() !== '';
-            sendButton.disabled = !hasInput;
-        });
-
-        // --- APP INITIALIZATION ---
-
-        function initApp() {
-            // Load essential configurations first
-            loadTheme();
-            loadLanguage(); 
-            loadTone();
-            // loadProfileCustomization() called inside updateAuthUI (after userId is set)
-
-            // Load history or start new chat (History check is now inside loadChatHistory)
-            const minimumLoadTime = new Promise(resolve => setTimeout(resolve, MINIMUM_LOAD_MS)); // FIX: Uses 3000ms
-            const authReadyCheck = supabase.auth.getSession(); 
-
-            Promise.all([minimumLoadTime, authReadyCheck]).then(() => {
-                // Initial auth state check will trigger updateAuthUI which loads initial history/profile
-                
-                // If no history was loaded by the auth listener (i.e., guest without prior history), start fresh.
-                if (!loadChatHistory()) {
-                     startNewChat(); 
-                }
-                loadProfileCustomization(); // Ensure profile custom fields are loaded/synced once auth is known
-                validateInput();
-
-                // Hide Preloader and show app container after 3s minimum AND auth check is done
-                preloader.classList.add('opacity-0');
-                preloader.addEventListener('transitionend', () => {
-                    preloader.classList.add('hidden');
-                    appContainer.classList.remove('opacity-0');
-                }, { once: true });
-            });
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const app = document.getElementById('app');
+            loadingOverlay.style.opacity = '0';
+            app.style.opacity = '1';
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+            }, 300);
         }
         
-        // This is called once all external module scripts have loaded.
-        document.addEventListener('DOMContentLoaded', initApp);
+        // --- Rendering Functions ---
+
+        /**
+         * Renders the authentication section in the header.
+         */
+        function renderAuthSection() {
+            const authSection = document.getElementById('auth-section');
+            let content = '';
+            
+            if (currentUser) {
+                const displayName = userProfileData.name || currentUser.email || 'Learner';
+                const initials = (displayName.match(/\b\w/g) || []).join('').toUpperCase() || 'L';
+                
+                content = `
+                    <button class="text-gray-500 hover:text-knowsta-500 p-2 rounded-full transition-colors hidden sm:block" title="Search">
+                         <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                    <!-- User Profile Dropdown Mock --><button onclick="signOutUser()" class="flex items-center space-x-2 bg-knowsta-50 hover:bg-red-500 group rounded-full p-1.5 transition-colors duration-200 transform hover:-translate-y-0.5 active:translate-y-0.5" title="Sign Out">
+                        <span class="h-8 w-8 rounded-full bg-knowsta-500 group-hover:bg-red-600 flex items-center justify-center text-white font-semibold text-sm transition-colors">${initials}</span>
+                        <span class="hidden sm:inline text-sm font-medium text-gray-700 group-hover:text-white transition-colors">Sign Out</span>
+                        <i data-lucide="log-out" class="w-4 h-4 text-gray-600 group-hover:text-white mr-1 hidden sm:inline"></i>
+                    </button>
+                `;
+                authSection.innerHTML = content;
+
+                document.getElementById('welcome-header').textContent = `Hello, ${displayName.split(' ')[0]}!`;
+
+            } else {
+                // Logged Out: Show Sign In button
+                content = `
+                    <button onclick="signInWithGoogle()" class="inline-flex items-center text-sm font-medium text-knowsta-500 hover:bg-knowsta-50 py-2 px-3 rounded-lg transition-colors border border-knowsta-500/20 hover:shadow-md transform hover:-translate-y-0.5 active:translate-y-0.5">
+                        <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                        Sign In
+                    </button>
+                `;
+                authSection.innerHTML = content;
+            }
+        }
+        
+        /**
+         * Renders the settings view with current profile data.
+         */
+        function renderSettingsView() {
+            if (currentUser) {
+                // Pre-fill fields with user data
+                document.getElementById('profile-name').value = userProfileData.name;
+                document.getElementById('profile-bio').value = userProfileData.bio || '';
+                document.getElementById('profile-location').value = userProfileData.location || '';
+            }
+        }
+
+        /**
+         * Main function to render the entire application based on auth state and current view.
+         */
+        function renderApp() {
+            renderAuthSection();
+
+            const allViews = document.querySelectorAll('.app-view');
+            const loggedOutView = document.getElementById('logged-out-view');
+            const subtitleElement = document.getElementById('welcome-subtitle');
+            
+            // 1. Handle navigation visibility and active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('nav-active');
+                if (link.id === `nav-${currentView}`) {
+                    link.classList.add('nav-active');
+                }
+            });
+
+
+            if (currentUser) {
+                // Logged In: Show selected view and hide logged-out view
+                loggedOutView.classList.add('hidden');
+                
+                // Hide all authenticated views
+                allViews.forEach(view => {
+                    view.classList.add('hidden');
+                    view.classList.add('opacity-0');
+                });
+                
+                // Show the current view
+                const viewElement = document.getElementById(`${currentView}-view`) || document.getElementById('dashboard-view');
+                viewElement.classList.remove('hidden');
+                
+                // Trigger fade-in animation
+                setTimeout(() => {
+                    viewElement.classList.remove('opacity-0');
+                }, 10); 
+
+                // 2. Render specific view content
+                if (currentView === 'dashboard' || currentView === 'catalog') {
+                    
+                    const hasProgress = userProfileData.inProgressCourses.length > 0 || userProfileData.coursesStarted > 0;
+                    if (hasProgress) {
+                        subtitleElement.textContent = "Continue your journey and track your progress.";
+                    } else {
+                        // NEW USER: Zero progress message
+                        subtitleElement.textContent = "Your learning adventure starts now. Explore our catalog below!";
+                    }
+                    
+                    // STATS: Use dynamic userProfileData
+                    const dashboardStats = [
+                        { title: "Courses Started", value: userProfileData.coursesStarted, icon: "graduation-cap", color: "text-blue-500" },
+                        { title: "Certificates Earned", value: userProfileData.certificatesEarned, icon: "award", color: "text-green-500" },
+                        { title: "Hours Spent (Total)", value: userProfileData.hoursSpent, icon: "clock", color: "text-orange-500" },
+                    ];
+
+                    document.getElementById('stats-container').innerHTML = dashboardStats.map(createStatCard).join('');
+
+                    // COURSES IN PROGRESS: Use dynamic userProfileData
+                    document.getElementById('in-progress-courses').innerHTML = userProfileData.inProgressCourses.map((course, index) => createCourseCard(course, true, index)).join('');
+
+                    // RECOMMENDED COURSES: Use static mock catalog
+                    document.getElementById('recommended-courses').innerHTML = mockCourseCatalog.map((course, index) => createCourseCard(course, false, index)).join('');
+                
+                } else if (currentView === 'settings') {
+                    renderSettingsView(); // Render settings page content
+                }
+                
+            } else {
+                // Logged Out: Show CTA to sign in
+                allViews.forEach(view => view.classList.add('hidden'));
+                loggedOutView.classList.remove('hidden');
+            }
+            
+            // Re-initialize Lucide Icons after content is rendered
+            lucide.createIcons();
+        }
+
+
+        // --- Course/Stat Card Rendering Functions (Unchanged) ---
+        function createStatCard(stat, index) {
+            return `
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-4 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-slide-fade-in" style="animation-delay: ${index * 0.1}s;">
+                    <div class="p-3 rounded-full bg-knowsta-50 ${stat.color} bg-opacity-20">
+                        <i data-lucide="${stat.icon}" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">${stat.title}</p>
+                        <p class="text-3xl font-bold text-gray-800">${stat.value}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function createCourseCard(course, isInProgress, index) {
+            const progress = course.progress;
+            const progressColor = progress >= 75 ? 'bg-green-500' : progress >= 40 ? 'bg-knowsta-500' : 'bg-orange-500';
+            
+            const instructorInitials = (course.instructor.match(/\b\w/g) || []).join('');
+            const randomColorClass = instructorAvatarColors[Math.floor(Math.random() * instructorAvatarColors.length)];
+
+            const instructorDisplay = `
+                <div class="flex items-center space-x-2 text-sm text-gray-500 mb-3 flex-grow">
+                    <!-- Instructor Mock Avatar (New Improvement) --><div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold ${randomColorClass} bg-opacity-80 border border-white shadow-sm">
+                        ${instructorInitials}
+                    </div>
+                    <span>${course.instructor}</span>
+                </div>
+            `;
+            
+            const buttonAction = isInProgress 
+                ? `<button onclick="copyToClipboard('https://knowsta.learn/course/${course.id}', ${course.id})" class="text-sm font-medium text-knowsta-500 hover:text-knowsta-600 transition-colors flex items-center transform hover:-translate-y-0.5 active:translate-y-0.5">
+                      <i data-lucide="share-2" class="icon-small mr-1"></i> Share Progress
+                   </button>`
+                : `<button onclick="startCourse(${course.id}, '${course.title}')" class="w-full bg-knowsta-500 text-white py-2 rounded-lg hover:bg-knowsta-600 transition-colors font-medium text-sm transform hover:-translate-y-0.5 active:translate-y-0.5">
+                      Enroll for Free
+                   </button>`;
+
+            const progressDisplay = isInProgress && progress > 0 
+                ? `
+                    <div class="mt-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-medium text-gray-600">Progress</span>
+                            <span class="text-xs font-semibold ${progressColor}">${progress}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar-fill h-2 rounded-full ${progressColor}" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                  `
+                : `<div class="mt-4 h-9"></div>`; // Placeholder for consistent height
+
+            return `
+                <div class="bg-white shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer flex flex-col animate-slide-fade-in" style="animation-delay: ${index * 0.08}s;">
+                    <div class="h-40 bg-gray-100 overflow-hidden">
+                        <img src="${course.image}" alt="${course.title}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <span class="text-xs font-semibold uppercase text-knowsta-500 mb-1">${course.category}</span>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">${course.title}</h3>
+                        ${instructorDisplay}
+                        
+                        ${progressDisplay}
+
+                        <div class="mt-4 border-t pt-4">
+                            ${buttonAction}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // Initialize the application when the window loads
+        window.onload = setupSupabase;
+
     </script>
 </body>
 </html>
